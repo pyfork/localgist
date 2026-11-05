@@ -349,6 +349,10 @@ a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{tex
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .wrap{width:min(1040px,100% - 64px);min-height:100vh;margin:0 auto;background:var(--surface);border-inline:1px solid var(--line);overflow:clip}  /* square, runs top to bottom like Finviz */
 .top{background:var(--surface)}
+/* Finviz layout: the header runs the full window width; only the list below sits in the centred column */
+.bar{border-bottom:1px solid var(--line)}
+.bar>header,.bar>.scope{max-width:1440px;margin:0 auto;border-bottom:0}
+.bar.band{border-bottom:3px double var(--rule)}.band>.nameplate{max-width:1440px;margin:0 auto;border-bottom:0}
 header{position:relative;display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line)}
 .brand{font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--fg)}.brand:visited{color:var(--fg)}
 .search{position:relative;flex:1 1 220px;max-width:380px;min-width:0}
@@ -539,7 +543,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .nameplate h1{font-size:36px}
  .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.period{width:100%}.overview{flex:1;width:auto;height:28px}.grip{width:18px}.preset{width:28px;height:28px}
  .scope .mchip{display:inline-flex}
- .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
+ .c2,#t2:checked~.wrap .c1{display:none}#t2:checked~.wrap .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
@@ -739,7 +743,7 @@ def shell(name, body, prefs=DEFAULT_PREFS, script=False):
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
         f"<title>{html.escape(name)}</title>{font_link}<style>{CSS}</style></head>"
-        f'<body><div class="wrap">{body}</div>{f"<script>{JS}</script>" if script else ""}</body></html>'
+        f'<body>{body}{f"<script>{JS}</script>" if script else ""}</body></html>'
     )
 
 
@@ -926,7 +930,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
         '<div class="strip" aria-hidden=true><i></i><i></i><i></i></div>'
-        f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
+        f'<div class="bar band"><div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
         f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
         '<figcaption>Gists written, by month</figcaption>'
@@ -936,19 +940,19 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="grip l" role=slider tabindex=0 aria-label="Start of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div>'
         f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
         f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period" hidden>{XMARK}</button></div>'
-        '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div>'
-        '<div class="top"><header><a class="brand" href="/">localgist</a>'
+        '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div></div>'
+                '<div class="top"><div class="bar"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
         f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
         f'<div class="hsize">{size_picker("hsize", prefs["size"])}</div>'
-        f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header>'
-        f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<button id=mchip class="mchip" type=button hidden></button><span id=st aria-live=polite></span></div>'
+        f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header></div>'
+        f'<div class="bar"><div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<button id=mchip class="mchip" type=button hidden></button><span id=st aria-live=polite></span></div></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
-        f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
-        f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
+        f'<div class="wrap"><main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
+        f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main></div>'
         f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
         f'<script type="application/json" id=d data-v="{html.escape(signature(held))}" data-csrf="{CSRF}">{search_data(items, field)}</script>',
@@ -992,7 +996,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, json.dumps(search(q.get("q", [""])[0][:200], scopes)), "application/json")
             return self.send(404, "not found", "text/plain")
         except Exception as e:  # GitHub down, token expired, etc.
-            return self.send(502, shell("error", f"<p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p>"))
+            return self.send(502, shell("error", f"<div class='wrap'><p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p></div>"))
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools

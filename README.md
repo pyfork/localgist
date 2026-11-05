@@ -21,6 +21,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 ## Layout
 
 - Desktop: Finviz-sized. The list runs the full width (up to 1440px) in two boxed tables (1px border, 6px corners, 27px rows) of 90 rows each, then page 2.
+- Under 1024px (phones, portrait tablets): never a masthead; the Layout choice is hidden.
 - Under 768px: full width, one column, sticky search and tabs, rows at least 48px tall.
 - Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
 - Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
@@ -54,7 +55,7 @@ The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark s
 | Font | Arial · Source Sans 3 · Helvetica · IBM Plex Sans (the Finviz font) | Arial |
 
 Text is 12px in every font, the same as Finviz's news rows (14px on phones). Corners follow Finviz: 6px on controls and tables, 4px on small items.
-| Layout | Masthead · Minimal (hides the colour strip, nameplate and chart) | Masthead |
+| Layout (1024px and wider: desktops, landscape tablets) | Masthead · Minimal (hides the colour strip, nameplate and chart) | Masthead |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).

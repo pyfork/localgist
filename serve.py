@@ -476,6 +476,7 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .chart line{stroke:var(--rule);stroke-width:1}
 header .brand{display:none}
 html[data-mast=off] .strip,html[data-mast=off] .band{display:none}html[data-mast=off] header .brand{display:inline}  /* Minimal layout */
+@media (max-width:1023px){.strip,.band,.m-mast{display:none}header .brand{display:inline}}  /* phones and portrait tablets: never a masthead, so no Layout choice */
 .empty.quiet{padding:28px 0 8px;text-align:center;font:italic 16px/1.4 var(--serif)}
 table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 tr:last-child td{border-bottom:0}
@@ -533,9 +534,6 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  main{display:block;padding:0 16px 32px}h2{display:none}
  header .meta{flex:1 1 auto;justify-content:space-between}
  header .search{flex:1 1 180px}
- .nameplate{grid-template-columns:1fr;gap:14px;padding:14px 16px 14px}
- .nameplate h1{font-size:36px}
- .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.period{width:100%}.overview{flex:1;width:auto;height:28px}.grip{width:18px}.preset{width:28px;height:28px}
  .scope .mchip{display:inline-flex}
  .c2,#t2:checked~.wrap .c1{display:none}#t2:checked~.wrap .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
@@ -816,7 +814,7 @@ def settings_dialog(prefs):
         f'<fieldset class="wide"><legend>Colour theme</legend>{palette_cards(prefs["palette"])}</fieldset>'
         f'<fieldset><legend>Light or dark</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
-        f'<fieldset><legend>Layout</legend><div class="seg">{seg("mast", MASTS)}</div>'
+        f'<fieldset class="m-mast"><legend>Layout</legend><div class="seg">{seg("mast", MASTS)}</div>'
         '<p class="hint">Minimal hides the masthead and chart.</p></fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'

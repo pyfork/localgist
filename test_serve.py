@@ -9,11 +9,11 @@ from datetime import datetime
 
 import serve
 
-# dates: Malaysia time, '4 Nov' + '14:05'; year only when not this year
+# dates, Finviz style in Malaysia time: '08:54AM' today, '04-Nov' before
 now = datetime(2026, 11, 5, 15, 0, tzinfo=serve.MYT)
-assert serve.stamp("2026-11-04T06:05:00Z", now) == ("4 Nov", "14:05")
-assert serve.stamp("2026-11-04T17:30:00Z", now) == ("5 Nov", "01:30")  # UTC evening is next day in MYT
-assert serve.stamp("2025-02-23T00:00:00Z", now) == ("23 Feb 2025", "08:00")
+assert serve.stamp("2026-11-05T00:54:00Z", now) == "08:54AM"
+assert serve.stamp("2026-11-04T06:05:00Z", now) == "04-Nov"
+assert serve.stamp("2026-11-04T17:30:00Z", now) == "01:30AM"  # UTC evening of the 4th is today in MYT
 
 # columns
 items = [{"id": str(i)} for i in range(261)]
@@ -38,16 +38,16 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"font": "arial", "time": "1", "open": "same", "in": "desc"}
-assert serve.read_prefs("lg=font%3Dsource%26time%3D0%26open%3Dnew%26in%3Dfile%252Ccontent") == {"font": "source", "time": "0", "open": "new", "in": "file,content"}
+assert serve.read_prefs(None) == {"font": "arial", "open": "same", "in": "desc"}
+assert serve.read_prefs("lg=font%3Dsource%26time%3D0%26open%3Dnew%26in%3Dfile%252Ccontent") == {"font": "source", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"font": "source", "time": "0", "open": "new", "in": "desc,content"})
-assert 'class=notime' in page and 'data-font="source"' in page and "fonts.googleapis.com" in page
+page = serve.index_page(1, False, "updated", {"font": "source", "open": "new", "in": "desc,content"})
+assert 'data-font="source"' in page and "showtime" not in page and "fonts.googleapis.com" in page
 assert 'href="https://gist.github.com/g1" target=_blank rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page
 assert 'value=content checked' in page and 'value=file>' in page
 assert "<h2>Page one</h2>" in page and "<h2>Page two</h2>" in page and "Gists</span>" not in page

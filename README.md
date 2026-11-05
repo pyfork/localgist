@@ -24,7 +24,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Under 768px: full width, one column, sticky search and tabs, rows at least 48px tall.
 - Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
 - Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
-- Row: date and time in Malaysia time (`4 Nov 14:05`; the year shows when it is not this year), then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
+- Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `04-Nov`, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
 - While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 
@@ -44,7 +44,6 @@ The gear button (top right) opens a centered settings window:
 |---|---|---|
 | Font | Arial · Source Sans 3 · Helvetica | Arial |
 | Clicks open | Same window · New tab | Same window (Back works) |
-| Dates | Show time on / off (Malaysia time) | On |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them.
 - **Esc** closes once saved. With unsaved changes, Esc or ✕ asks: **Keep editing** or **Exit anyway** (which undoes the preview).

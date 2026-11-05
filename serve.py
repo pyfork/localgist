@@ -201,7 +201,7 @@ def search(q, scopes):
 
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
-DEFAULT_PREFS = {"font": "arial", "time": "1", "open": "same", "in": "desc"}
+DEFAULT_PREFS = {"font": "arial", "open": "same", "in": "desc"}
 
 
 def read_prefs(cookie_header):
@@ -214,8 +214,6 @@ def read_prefs(cookie_header):
         q = parse_qs(unquote(c["lg"].value))
         if (f := q.get("font", [""])[0]) in FONTS:
             p["font"] = f
-        if (t := q.get("time", [""])[0]) in ("0", "1"):
-            p["time"] = t
         if (o := q.get("open", [""])[0]) in OPENS:
             p["open"] = o
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
@@ -227,10 +225,10 @@ MYT = ZoneInfo("Asia/Kuala_Lumpur")
 
 
 def stamp(iso, now=None):
-    """('4 Nov', '14:05') in Malaysia time; the year is added when it is not this year."""
+    """Finviz style, Malaysia time: '08:54AM' if today, else '04-Nov'."""
     dt = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(MYT)
     now = now or datetime.now(MYT)
-    return f"{dt.day} {dt:%b}" + ("" if dt.year == now.year else f" {dt.year}"), f"{dt:%H:%M}"
+    return f"{dt:%I:%M%p}" if dt.date() == now.date() else f"{dt:%d-%b}"
 
 
 def columns(items, page):
@@ -261,10 +259,10 @@ def gist_url(g):
 
 
 def search_data(items, field="updated_at"):
-    """[id, url, date, time, title, desc, files] per gist (desc and files lowercased),
+    """[id, url, stamp, title, desc, files] per gist (desc and files lowercased),
     safe to embed in a <script> block."""
     rows = [
-        [g["id"], gist_url(g), *stamp(g[field]), title(g), (g.get("description") or "").lower(), " ".join(g["files"]).lower()]
+        [g["id"], gist_url(g), stamp(g[field]), title(g), (g.get("description") or "").lower(), " ".join(g["files"]).lower()]
         for g in items
     ]
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
@@ -324,7 +322,6 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .m-body{padding:20px 24px 22px;text-align:center}
 .m-body fieldset{border:0;margin:0;padding:0;min-width:0}.m-body fieldset+fieldset{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
 .m-body legend{padding:0;margin:0 auto 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.m-body .switch{display:inline-flex}
 .m-foot{padding:12px 16px 12px 20px;border-top:1px solid var(--line);background:var(--field);border-radius:0 0 16px 16px}
 .m-row{display:flex;align-items:center;gap:8px}
 .m-msg{margin-right:auto;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
@@ -338,18 +335,13 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .btn.danger{background:#c62828;border-color:#c62828;color:#fff}.btn.danger:hover{filter:brightness(1.1)}
 .seg{display:flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px}
 .seg label{flex:1;position:relative;cursor:pointer}
-.seg input,.switch input,.chip input{position:absolute;opacity:0;pointer-events:none}
+.seg input,.chip input{position:absolute;opacity:0;pointer-events:none}
 .f-same,.f-new{font-family:inherit}
 .seg span{display:grid;place-items:center;height:30px;padding:0 6px;border-radius:6px;font-size:13px;color:var(--muted);white-space:nowrap}
 .seg label:hover span{color:var(--fg)}
 .seg label:has(input:checked) span{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .seg label:has(input:focus-visible) span{outline:2px solid var(--focus)}
 .f-arial{font-family:Arial,sans-serif}.f-source{font-family:"Source Sans 3",Arial,sans-serif}.f-helvetica{font-family:Helvetica,Arial,sans-serif}
-.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500;position:relative}
-.track{position:relative;flex:none;width:34px;height:20px;border-radius:999px;background:var(--field-line);transition:background .15s}
-.track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgb(0 0 0 / .3);transition:translate .15s}
-.switch input:checked+.track{background:var(--focus)}.switch input:checked+.track::after{translate:14px 0}
-.switch input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
 .hint{margin:8px 0 0;color:var(--faint);font-size:11.5px}
 .scope{display:flex;align-items:center;gap:8px;padding:8px 24px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:999px;cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
@@ -366,15 +358,13 @@ h2{display:flex;justify-content:space-between;margin:10px 0 2px;padding-bottom:6
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
-td.t{width:104px;padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px}
-td.t .h{color:var(--faint)}
-html.notime td.t{width:64px}html.notime .h{display:none}
+td.t{width:68px;padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px}
 .empty{color:var(--muted);padding:14px 0;margin:0}
 .toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#3ccf7a}
 .toast:hover{filter:brightness(1.1)}
 @keyframes rise{from{opacity:0;translate:-50% 8px}}
-@media (prefers-reduced-motion:reduce){.toast{animation:none}.track,.track::after{transition:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
 @media (max-width:767px){
  html{--fs:14px}html[data-font=source]{--fs:15px}
  .wrap{width:auto;margin:0;border:0;border-radius:0;box-shadow:none;min-height:100vh}
@@ -395,8 +385,7 @@ html.notime td.t{width:64px}html.notime .h{display:none}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
- td.t,html.notime td.t{width:68px;font-size:12px;padding:9px 8px 0 0;line-height:1.35}
- td.t span{display:block}
+ td.t{width:68px;font-size:12px;padding:10px 8px 0 0}
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
 """
@@ -425,15 +414,15 @@ SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@4
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML),keepCnt=cnt.textContent;
-const prefs={font:root.dataset.font,time:root.dataset.time,open:root.dataset.open,in:root.dataset.in};
+const prefs={font:root.dataset.font,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
 const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filter(b=>b.checked).map(b=>b.value);
 function table(list,msg){if(!list.length){const p=document.createElement("p");p.className="empty";p.textContent=msg;return p}
- const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a"),d=document.createElement("span"),h=document.createElement("span");
- c.className="t";d.textContent=g[2];h.className="h";h.textContent=g[3];c.append(d," ",h);
- a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[4];r.insertCell().append(a)}return t}
+ const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
+ c.className="t";c.textContent=g[2];
+ a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a)}return t}
 function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
  box[0].replaceChildren(table(L,`No gists match “${s}”.`));box[1].replaceChildren(table(R,m.length?"No more matches.":""));
  cnt.textContent=`${m.length} of ${D.length}`+(m.length>2*N?" (first 180)":"");pg.hidden=true;$("t1").checked=true}
@@ -442,7 +431,7 @@ function remember(raw){const u=new URL(location.href);if(raw)u.searchParams.set(
 function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;clearTimeout(timer);st.textContent="";remember(raw);
  if(!s){box.forEach((e,i)=>e.innerHTML=keep[i]);targets(prefs.open);cnt.textContent=keepCnt;pg.hidden=false;return}
  const w=s.split(/\s+/);
- if(!sc.includes("content")){show(D.filter(g=>{const h=(sc.includes("desc")?g[5]:"")+" "+(sc.includes("file")?g[6]:"");return w.every(x=>h.includes(x))}),raw);return}
+ if(!sc.includes("content")){show(D.filter(g=>{const h=(sc.includes("desc")?g[4]:"")+" "+(sc.includes("file")?g[5]:"");return w.every(x=>h.includes(x))}),raw);return}
  st.textContent="Searching contents…";
  timer=setTimeout(()=>fetch("/search?"+new URLSearchParams({q:raw,in:sc.join(",")}),{cache:"no-store"}).then(r=>r.json()).then(j=>{if(my!==seq)return;
   const ids=new Set(j.ids);show(D.filter(g=>ids.has(g[0])),raw);
@@ -456,14 +445,14 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-let saved={font:prefs.font,time:prefs.time,open:prefs.open},justSaved=false;
-const form=()=>({font:dlg.querySelector("input[name=font]:checked").value,open:dlg.querySelector("input[name=open]:checked").value,time:$("showtime").checked?"1":"0"});
-const dirty=()=>{const f=form();return f.font!==saved.font||f.time!==saved.time||f.open!==saved.open};
-function apply(p){root.dataset.font=p.font;root.classList.toggle("notime",p.time==="0");targets(p.open);
+let saved={font:prefs.font,open:prefs.open},justSaved=false;
+const form=()=>({font:dlg.querySelector("input[name=font]:checked").value,open:dlg.querySelector("input[name=open]:checked").value});
+const dirty=()=>{const f=form();return f.font!==saved.font||f.open!==saved.open};
+function apply(p){root.dataset.font=p.font;targets(p.open);
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
-function setForm(p){for(const k of["font","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true;$("showtime").checked=p.time==="1"}
+function setForm(p){for(const k of["font","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true}
 function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
 function close(){asking(false);dlg.close();gear.focus()}
 function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
@@ -493,8 +482,8 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-time="{prefs["time"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
-        f'{" class=notime" if prefs["time"] == "0" else ""}><head><meta charset=utf-8>'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
         f"<title>{html.escape(name)}</title>{font_link}<style>{CSS}</style></head>"
@@ -507,10 +496,9 @@ def rows(items, field="updated_at", open_in="same"):
         return '<p class="empty">No more gists.</p>'
     out, target = [], " target=_blank" if open_in == "new" else ""
     for g in items:
-        d, h = stamp(g[field])
         t = html.escape(title(g))
         out.append(
-            f'<tr><td class="t"><span>{d}</span> <span class="h">{h}</span></td>'
+            f'<tr><td class="t">{stamp(g[field])}</td>'
             f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a></td></tr>'
         )
     return f'<table>{"".join(out)}</table>'
@@ -541,9 +529,7 @@ def settings_dialog(prefs):
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
-        '<fieldset><legend>Dates</legend><label class="switch"><input type=checkbox id=showtime'
-        f'{" checked" if prefs["time"] == "1" else ""}><span class="track"></span>Show time</label>'
-        '<p class="hint">Malaysia time (UTC+8), e.g. 4 Nov 14:05</p></fieldset></div>'
+        '</div>'
         '<div class="m-foot"><div id=m-normal class="m-row"><span id=m-msg class="m-msg" aria-live=polite></span>'
         '<button id=m-save class="btn primary" type=button disabled>Save</button></div>'
         '<div id=m-ask class="m-row ask" role=alert hidden><span class="m-msg">You have unsaved changes.</span>'

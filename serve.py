@@ -11,6 +11,8 @@ after 60 minutes with no page loads (sleep does not count).
 """
 import base64
 import hashlib
+import hmac
+import secrets
 import html
 import json
 import re
@@ -46,9 +48,10 @@ _lock = threading.Lock()  # one list fetch at a time
 _last_hit = [time.clock_gettime(CLOCK)]
 
 
-def gh(path, body=None, with_headers=False):
+def gh(path, body=None, with_headers=False, method=None):
     req = urllib.request.Request(
         API + path,
+        method=method,
         data=json.dumps(body).encode() if body else None,
         headers={
             "Authorization": f"Bearer {TOKEN}",
@@ -107,6 +110,25 @@ def gists(refresh=False):
         threading.Thread(target=_load_in_background, daemon=True).start()
         return old
     return _list["gists"]
+
+
+CSRF = secrets.token_urlsafe(24)  # per run; a page from another site cannot read it, so cannot send it
+
+
+def delete_gist(gid):
+    """Delete on GitHub (permanent), then drop it from the list and the content index."""
+    gh(f"/gists/{gid}", method="DELETE")
+    _list["gists"] = [g for g in _list["gists"] if g["id"] != gid]
+    _content.pop(gid, None)
+    return signature(_list["gists"])
+
+
+def same_origin(headers):
+    """Only our own page may change anything: right Host, matching Origin, same-site fetch, CSRF token."""
+    host = headers.get("Host", "")
+    origin, site = headers.get("Origin"), headers.get("Sec-Fetch-Site")
+    return (host_ok(host) and origin == f"http://{host}" and site in (None, "same-origin")
+            and hmac.compare_digest(headers.get("X-CSRF", ""), CSRF))
 
 
 def signature(items):
@@ -201,7 +223,10 @@ def search(q, scopes):
 
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
-DEFAULT_PREFS = {"font": "arial", "open": "same", "in": "desc"}
+SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # stepper order; Medium is the default
+THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
+DEFAULT_PREFS = {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("font", "size", "theme", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -214,6 +239,10 @@ def read_prefs(cookie_header):
         q = parse_qs(unquote(c["lg"].value))
         if (f := q.get("font", [""])[0]) in FONTS:
             p["font"] = f
+        if (z := q.get("size", [""])[0]) in SIZES:
+            p["size"] = z
+        if (th := q.get("theme", [""])[0]) in THEMES:
+            p["theme"] = th
         if (o := q.get("open", [""])[0]) in OPENS:
             p["open"] = o
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
@@ -259,31 +288,35 @@ def gist_url(g):
 
 
 def search_data(items, field="updated_at"):
-    """[id, url, stamp, title, desc, files] per gist (desc and files lowercased),
+    """[id, url, stamp, title, desc, files, comments] per gist (desc and files lowercased),
     safe to embed in a <script> block."""
     rows = [
-        [g["id"], gist_url(g), stamp(g[field]), title(g), (g.get("description") or "").lower(), " ".join(g["files"]).lower()]
+        [g["id"], gist_url(g), stamp(g[field]), title(g), (g.get("description") or "").lower(), " ".join(g["files"]).lower(),
+         int(g.get("comments") or 0)]
         for g in items
     ]
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
 
+
+DARK = ("color-scheme:dark;--page:#0b0d10;--surface:#14171c;--fg:#e8eaef;--muted:#a0a7b4;--faint:#6f7683;--line:#242830;--rule:#e8eaef;"
+        "--link:#a9c4f6;--seen:#c7adf2;--hover:#1b2028;--field:#0f1216;--field-line:#2c313a;--focus:#6b96ff;--kbd:#1d2129;"
+        "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
 :root{color-scheme:light;
  --page:#eef0f3;--surface:#fff;--fg:#16181d;--muted:#5f6673;--faint:#8a919d;--line:#e7e9ed;--rule:#16181d;
  --link:#173a7a;--seen:#5b3f8c;--hover:#f3f6fb;--field:#f6f7f9;--field-line:#d9dce2;--focus:#2f6feb;--kbd:#fff;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;
- --page:#0b0d10;--surface:#14171c;--fg:#e8eaef;--muted:#a0a7b4;--faint:#6f7683;--line:#242830;--rule:#e8eaef;
- --link:#a9c4f6;--seen:#c7adf2;--hover:#1b2028;--field:#0f1216;--field-line:#2c313a;--focus:#6b96ff;--kbd:#1d2129;--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);
- --pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
+:root[data-theme=dark]{DARK}
 html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px}
 html[data-font=helvetica]{--ff:Helvetica,"Helvetica Neue",Arial,sans-serif}
 html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif;--fs:13.5px}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{background:var(--page)}
-body{margin:0;background:var(--page);color:var(--fg);font:var(--fs)/1.45 var(--ff);-webkit-font-smoothing:antialiased}
+html{--scale:1}html[data-size=s]{--scale:.9}html[data-size=l]{--scale:1.15}
+body{margin:0;background:var(--page);color:var(--fg);font:calc(var(--fs) * var(--scale))/1.45 var(--ff);-webkit-font-smoothing:antialiased}
 button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
@@ -358,8 +391,31 @@ h2{display:flex;justify-content:space-between;margin:10px 0 2px;padding-bottom:6
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
-td.t{width:68px;padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px}
+td.t{width:calc(68px * var(--scale));padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:calc(11.5px * var(--scale))}
 .empty{color:var(--muted);padding:14px 0;margin:0}
+td.act{width:58px;padding:1px 2px 0 0;text-align:right;overflow:visible}
+td.cm{width:34px;padding:4px 0 0 6px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+td.cm span{display:inline-flex;align-items:center;gap:2px}td.cm .hi{width:13px;height:13px}
+.ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:6px;background:none;color:var(--faint);cursor:pointer;opacity:0}
+.ib .hi{width:15px;height:15px}
+tr:hover .ib,tr:focus-within .ib,.ib:focus-visible{opacity:1}
+.ib:hover{background:var(--surface);color:var(--fg)}.ib.del:hover{color:#c62828}
+.ib.done{opacity:1;color:#1f8a4c}
+@media (hover:none){.ib{opacity:.7}}
+dialog.modal.small{width:min(380px,calc(100% - 32px))}
+.m-body.left{text-align:left;padding:16px 20px 14px}
+.c-name{margin:0 0 6px;font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.c-err{margin:10px 0 0;color:#c62828;font-size:12.5px}
+.m-row.end{justify-content:flex-end}
+.stepper{display:inline-flex;align-items:center;gap:12px}
+.stepper button{width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:8px;background:var(--field);color:var(--fg);cursor:pointer}
+.stepper button:hover:not(:disabled){border-color:var(--fg)}.stepper button:disabled{opacity:.35;cursor:default}
+.stepper .hi{width:16px;height:16px}
+.sz{min-width:88px;display:grid;justify-items:center;gap:5px}
+.sz output{font-size:13px;font-weight:600}
+.dots{display:flex;gap:5px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--field-line)}.dots i.on{background:var(--fg)}
+.btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
+.note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
 .toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#3ccf7a}
 .toast:hover{filter:brightness(1.1)}
@@ -385,7 +441,8 @@ td.t{width:68px;padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:ta
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
- td.t{width:68px;font-size:12px;padding:10px 8px 0 0}
+ td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
+ td.act{width:60px;padding-top:6px}.ib{width:28px;height:30px}td.cm{padding-top:10px}
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
 """
@@ -398,12 +455,19 @@ def hero(d, size=24):
             f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{d}</svg>')
 
 
+CSS = CSS.replace("DARK", DARK)
+
 ICON = hero('<path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>')  # magnifying-glass
 GEAR = hero(  # cog-6-tooth
     '<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>'
     '<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>'
 )
 REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>')  # arrow-path
+COPY = hero('<path d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z"/>')  # clipboard-document
+TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
+CHAT = hero('<path d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/>')  # chat-bubble-left
+MINUS = hero('<path d="M5 12h14"/>')  # minus
+PLUS = hero('<path d="M12 4.5v15m7.5-7.5h-15"/>')  # plus
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
 SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap"
@@ -413,8 +477,8 @@ SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@4
 # file-name matches run here; content matches come from /search. Rows are built with textContent only.
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
-const keep=box.map(e=>e.innerHTML),keepCnt=cnt.textContent;
-const prefs={font:root.dataset.font,open:root.dataset.open,in:root.dataset.in};
+const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
+const prefs={font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
@@ -422,7 +486,11 @@ const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filte
 function table(list,msg){if(!list.length){const p=document.createElement("p");p.className="empty";p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
  c.className="t";c.textContent=g[2];
- a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a)}return t}
+ a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a);
+ const cm=r.insertCell();cm.className="cm";if(g[6]){const sp=document.createElement("span");sp.title=sp.ariaLabel=`${g[6]} comment${g[6]===1?"":"s"}`;
+  sp.innerHTML=$("chat-icon").innerHTML;sp.append(g[6]);cm.append(sp)}
+ const x=r.insertCell();x.className="act";x.append($("act-tpl").content.cloneNode(true));
+ const[cp,dl]=x.querySelectorAll("button");cp.dataset.u=g[1];cp.ariaLabel="Copy link to "+g[3];dl.dataset.id=g[0];dl.ariaLabel="Delete "+g[3]}return t}
 function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
  box[0].replaceChildren(table(L,`No gists match “${s}”.`));box[1].replaceChildren(table(R,m.length?"No more matches.":""));
  cnt.textContent=`${m.length} of ${D.length}`+(m.length>2*N?" (first 180)":"");pg.hidden=true;$("t1").checked=true}
@@ -445,20 +513,28 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-let saved={font:prefs.font,open:prefs.open},justSaved=false;
-const form=()=>({font:dlg.querySelector("input[name=font]:checked").value,open:dlg.querySelector("input[name=open]:checked").value});
-const dirty=()=>{const f=form();return f.font!==saved.font||f.open!==saved.open};
-function apply(p){root.dataset.font=p.font;targets(p.open);
+const KEYS=["font","size","theme","open"],SZ=["s","m","l"],SZN={s:"Small",m:"Medium",l:"Large"},stepper=dlg.querySelector(".stepper");
+let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
+const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
+const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open"),size:stepper.dataset.v});
+const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
+function showSize(v){stepper.dataset.v=v;const i=SZ.indexOf(v);$("sz-out").textContent=SZN[v];$("sz-dn").disabled=i===0;$("sz-up").disabled=i===SZ.length-1;
+ stepper.querySelectorAll(".dots i").forEach((d,j)=>d.classList.toggle("on",j<=i))}
+function apply(p){root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
-function setForm(p){for(const k of["font","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true}
+function setForm(p){for(const k of["font","theme","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true;showSize(p.size)}
+const changed=()=>{apply(form());justSaved=false;status();asking(false)};
+const step=d=>{const i=SZ.indexOf(stepper.dataset.v)+d;if(i>=0&&i<SZ.length){showSize(SZ[i]);changed()}};
 function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
 function close(){asking(false);dlg.close();gear.focus()}
 function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
 function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status()}
 gear.addEventListener("click",()=>{setForm(saved);apply(saved);justSaved=false;status();asking(false);dlg.showModal()});
-dlg.addEventListener("change",()=>{apply(form());justSaved=false;status();asking(false)});
+dlg.addEventListener("change",changed);
+$("sz-dn").addEventListener("click",()=>step(-1));$("sz-up").addEventListener("click",()=>step(1));
+$("m-reset").addEventListener("click",()=>{setForm(JSON.parse(dlg.dataset.defaults));changed()});
 dlg.addEventListener("cancel",e=>{e.preventDefault();tryClose()});
 dlg.addEventListener("click",e=>{if(e.target===dlg)tryClose()});
 dlg.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();if(dirty())save()}});
@@ -468,8 +544,26 @@ $("m-close").addEventListener("click",tryClose);btn.addEventListener("click",sav
 $("m-keep").addEventListener("click",()=>asking(false));
 $("m-discard").addEventListener("click",()=>{setForm(saved);apply(saved);close()});
 if(!/Mac|iPhone|iPad/.test(navigator.platform)){$("k").textContent="Ctrl F";gear.title="Display settings (Ctrl K)"}
+// Row actions: copy link, delete (asks first; the server checks this page's CSRF token)
+let noteT;const note=$("note"),say=m=>{note.textContent=m;note.hidden=false;clearTimeout(noteT);noteT=setTimeout(()=>note.hidden=true,2200)};
+// clipboard API first; the old execCommand path covers browsers that refuse it
+const copyText=t=>(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{const a=document.createElement("textarea");
+ a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.append(a);a.select();const ok=document.execCommand("copy");a.remove();if(!ok)throw new Error("copy")});
+const cf=$("confirm"),cyes=$("c-yes"),cerr=$("c-err");let target=null;
+document.querySelector("main").addEventListener("click",e=>{const b=e.target.closest(".ib");if(!b)return;
+ if(b.classList.contains("copy")){copyText(b.dataset.u).then(()=>{const old=b.innerHTML;b.innerHTML=$("ok-icon").innerHTML;b.classList.add("done");say("Link copied");
+  setTimeout(()=>{b.innerHTML=old;b.classList.remove("done")},1400)},()=>say("Could not copy"));return}
+ target=b.dataset.id;$("c-name").textContent=b.closest("tr").querySelector("a").textContent;cerr.hidden=true;cyes.disabled=false;cyes.textContent="Yes, delete";cf.showModal();$("c-no").focus()});
+$("c-no").addEventListener("click",()=>cf.close());
+function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());
+ for(let i=0;i<keep.length;i++){const t=document.createElement("div");t.innerHTML=keep[i];t.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());keep[i]=t.innerHTML}
+ const k=D.findIndex(g=>g[0]===id);if(k>=0)D.splice(k,1);keepCnt=`${D.length} gists`;if(!q.value.trim())cnt.textContent=keepCnt;q.placeholder=`Search ${D.length} gists`}
+cyes.addEventListener("click",()=>{if(!target)return;cyes.disabled=true;cyes.textContent="Deleting…";
+ fetch("/api/gists/"+encodeURIComponent(target),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf}}).then(r=>r.ok?r.json():r.text().then(t=>{throw new Error(t||r.status)}))
+ .then(j=>{V=j.v;const name=$("c-name").textContent;drop(target);cf.close();say(`Deleted \u201c${name}\u201d`);target=null})
+ .catch(err=>{cerr.textContent="Could not delete: "+err.message;cerr.hidden=false;cyes.disabled=false;cyes.textContent="Try again"})});
 {const p=new URLSearchParams(location.search).get("q");if(p){q.value=p;run()}else if(q.value)run()}
-const V=$("d").dataset.v,u=$("upd");
+let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
 setInterval(check,60000);document.addEventListener("visibilitychange",check);
 u.addEventListener("click",()=>location.reload())})();"""
@@ -484,13 +578,24 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
         f"<title>{html.escape(name)}</title>{font_link}<style>{CSS}</style></head>"
         f'<body><div class="wrap">{body}</div>{f"<script>{JS}</script>" if script else ""}</body></html>'
     )
+
+
+def comments(g):
+    n = int(g.get("comments") or 0)
+    return f'<span title="{n} comment{"s" * (n != 1)}" aria-label="{n} comment{"s" * (n != 1)}">{CHAT}{n}</span>' if n else ""
+
+
+def actions(g):
+    url, t = html.escape(gist_url(g)), html.escape(title(g))
+    return (f'<button class="ib copy" type=button data-u="{url}" aria-label="Copy link to {t}" title="Copy link">{COPY}</button>'
+            f'<button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button>')
 
 
 def rows(items, field="updated_at", open_in="same"):
@@ -501,7 +606,8 @@ def rows(items, field="updated_at", open_in="same"):
         t = html.escape(title(g))
         out.append(
             f'<tr><td class="t">{stamp(g[field])}</td>'
-            f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a></td></tr>'
+            f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a></td>'
+            f'<td class="cm">{comments(g)}</td><td class="act">{actions(g)}</td></tr>'
         )
     return f'<table>{"".join(out)}</table>'
 
@@ -524,15 +630,33 @@ def settings_dialog(prefs):
             for k, v in options.items()
         )
     return (
-        f'<template id=ok-icon>{CHECK}</template><dialog id=settings class="modal" aria-labelledby=m-title>'
+        f'<template id=ok-icon>{CHECK}</template><template id=chat-icon>{CHAT}</template>'
+        f'<template id=act-tpl>{actions({"id": "", "html_url": "", "description": "", "files": {}})}</template>'
+        '<dialog id=confirm class="modal small" aria-labelledby=c-title aria-describedby=c-desc>'
+        '<div class="m-head"><div id=c-title class="m-title">Delete this gist?</div></div>'
+        '<div class="m-body left"><p id=c-name class="c-name"></p>'
+        '<p id=c-desc class="hint">This deletes it from GitHub for good. It cannot be undone.</p>'
+        '<p id=c-err class="c-err" role=alert hidden></p></div>'
+        '<div class="m-foot"><div class="m-row end"><button id=c-no class="btn" type=button autofocus>No, keep it</button>'
+        '<button id=c-yes class="btn danger" type=button>Yes, delete</button></div></div></dialog>'
+        '<div id=note class="note" role=status aria-live=polite hidden></div>'
+        '<dialog id=settings class="modal" aria-labelledby=m-title'
+        f' data-defaults="{html.escape(json.dumps({k: DEFAULT_PREFS[k] for k in DISPLAY_KEYS}))}">'
         f'<div class="m-head"><div id=m-title class="m-title">Display settings</div>'
         f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
         '<div class="m-body">'
+        f'<fieldset><legend>Theme</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
+        '<fieldset><legend>Text size</legend><div class="stepper">'
+        f'<button id=sz-dn type=button aria-label="Smaller text">{MINUS}</button>'
+        f'<div class="sz"><output id=sz-out aria-live=polite>{SIZES[prefs["size"]]}</output>'
+        f'<span class="dots" aria-hidden=true>{"".join("<i></i>" for _ in SIZES)}</span></div>'
+        f'<button id=sz-up type=button aria-label="Larger text">{PLUS}</button></div></fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '</div>'
         '<div class="m-foot"><div id=m-normal class="m-row"><span id=m-msg class="m-msg" aria-live=polite></span>'
+        '<button id=m-reset class="btn link" type=button title="Back to the defaults (Save to keep)">Reset</button>'
         '<button id=m-save class="btn primary" type=button disabled>Save</button></div>'
         '<div id=m-ask class="m-row ask" role=alert hidden><span class="m-msg">You have unsaved changes.</span>'
         '<button id=m-keep class="btn" type=button>Keep editing</button>'
@@ -581,7 +705,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
         f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
-        f'<script type="application/json" id=d data-v="{html.escape(signature(held))}">{search_data(items, field)}</script>',
+        f'<script type="application/json" id=d data-v="{html.escape(signature(held))}" data-csrf="{CSRF}">{search_data(items, field)}</script>',
         prefs,
         script=True,
     )
@@ -623,6 +747,19 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, "not found", "text/plain")
         except Exception as e:  # GitHub down, token expired, etc.
             return self.send(502, shell("error", f"<p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p>"))
+
+    def do_DELETE(self):
+        if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools
+            return self.send(403, "forbidden", "text/plain")
+        m = re.fullmatch(r"/api/gists/([0-9a-f]{1,64})", urlsplit(self.path).path)
+        if not m:
+            return self.send(404, "not found", "text/plain")
+        _last_hit[0] = time.clock_gettime(CLOCK)
+        try:
+            return self.send(200, json.dumps({"ok": True, "v": delete_gist(m[1])}), "application/json")
+        except Exception as e:
+            return self.send(502, f"GitHub said: {e}", "text/plain")
+
 
 def watch_idle(server):
     while True:

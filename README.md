@@ -36,16 +36,25 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Content search runs on the server. The first time you tick Content, it fetches each gist once (about 20 s for 264 gists, results fill in as it goes, with a progress note). After that a search takes about 30 ms, and only edited gists are fetched again.
 - `Enter` opens the first match, `Esc` clears.
 
+## Rows
+
+- Each row: stamp, description, comment count (when the gist has comments), then two buttons that appear on hover (always shown on touch screens):
+  - **Copy link**: copies the GitHub URL; the icon turns into a tick and "Link copied" shows.
+  - **Delete**: asks "Delete this gist?" with **No, keep it** (focused, and what Esc does) or **Yes, delete**. Yes deletes it from GitHub for good and removes the row.
+- Delete only works from this page: the server requires a matching `Origin`, a same-origin fetch and a per-run secret token, so other websites and stray tools cannot trigger it.
+
 ## Display settings
 
 The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a centered settings window:
 
 | Setting | Options | Default |
 |---|---|---|
+| Theme | System · Light · Dark | System |
 | Font | Arial · Source Sans 3 · Helvetica | Arial |
+| Text size | 3-step stepper: Small · Medium · Large | Medium |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
-- Choices preview live behind the window. **Save** (or ⌘S) keeps them.
+- Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).
 - **Esc** closes once saved. With unsaved changes, Esc or ✕ asks: **Keep editing** or **Exit anyway** (which undoes the preview).
 - Saved settings and the Search-in ticks live in one cookie on this browser for a year. The server reads it on every page load, so they survive `pydown` / `pyup`, restarts and port changes. They do not follow you to another browser or a private window.
 - Source Sans 3 is loaded from Google Fonts, only while it is picked.

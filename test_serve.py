@@ -38,15 +38,21 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"font": "arial", "open": "same", "in": "desc"}
-assert serve.read_prefs("lg=font%3Dsource%26time%3D0%26open%3Dnew%26in%3Dfile%252Ccontent") == {"font": "source", "open": "new", "in": "file,content"}
+assert serve.read_prefs(None) == {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
+    {"font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"font": "source", "open": "new", "in": "desc,content"})
+page = serve.index_page(1, False, "updated", {"font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
+assert 'data-size="l" data-theme="dark"' in page and "<output id=sz-out aria-live=polite>Large</output>" in page
+assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page
+assert f'data-csrf="{serve.CSRF}"' in page and "&quot;theme&quot;: &quot;system&quot;" in page  # Reset defaults ride on the dialog
+assert serve.comments({"comments": 3}).endswith("3</span>") and "3 comments" in serve.comments({"comments": 3})
+assert serve.comments({"comments": 0}) == "" and "1 comment\"" in serve.comments({"comments": 1})
 assert 'data-font="source"' in page and "showtime" not in page and "fonts.googleapis.com" in page
 assert 'href="https://gist.github.com/g1" target=_blank rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page
 assert 'value=content checked' in page and 'value=file>' in page
@@ -55,6 +61,33 @@ plain = serve.index_page(1, False)
 assert "<link id=fsrc" not in plain and 'href="https://gist.github.com/g1" rel=' in plain  # same window by default
 assert "<dialog id=settings" in plain and "value=same checked" in plain
 assert serve.column_name(2) == "Page three" and serve.column_name(11) == "Page 12"
+
+# delete: only our own page (same origin + CSRF token) may delete; the gist leaves the list and index
+import http.client, threading
+deleted = []
+serve.gh = lambda path, *a, method=None, **k: deleted.append((method, path)) or ""
+serve.Handler.log_message = lambda *a: None  # quiet test output
+srv = serve.bind(); port = srv.server_address[1]
+old_port, serve.PORT = serve.PORT, port
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+def call(headers):
+    c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    c.request("DELETE", "/api/gists/ab1", headers=headers); r = c.getresponse(); body = r.read(); c.close()
+    return r.status, body
+host = f"localhost:{port}"
+ok_headers = {"Host": host, "Origin": f"http://{host}", "Sec-Fetch-Site": "same-origin", "X-CSRF": serve.CSRF}
+assert call({**ok_headers, "X-CSRF": "wrong"})[0] == 403
+assert call({**ok_headers, "Origin": "https://evil.example"})[0] == 403
+assert call({**ok_headers, "Sec-Fetch-Site": "cross-site"})[0] == 403
+assert call({k: v for k, v in ok_headers.items() if k != "Origin"})[0] == 403
+assert call({**ok_headers, "Host": "evil.example", "Origin": "http://evil.example"})[0] == 403
+assert deleted == []                                             # nothing reached GitHub so far
+serve._list["gists"] = [{"id": "ab1", "updated_at": "1"}]
+serve._content["ab1"] = ("x", "text")
+status, body = call(ok_headers)
+assert status == 200 and json.loads(body)["v"] == "0" and deleted == [("DELETE", "/gists/ab1")]
+assert serve._list["gists"] == [] and "ab1" not in serve._content
+srv.shutdown(); srv.server_close(); serve.PORT = old_port
 
 # content search: fields combine, words must all match, results grow while the index builds
 serve._list["gists"] = [

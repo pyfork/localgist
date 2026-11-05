@@ -77,6 +77,23 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 - Strict CSP: only the one page script may run (pinned by hash), it can only talk to localgist, images only from localgist, fonts only from Google Fonts, no framing, no forms.
 - The settings cookie is read as untrusted input: unknown values fall back to the defaults.
 
+## Watercolor theme (branch `feat/watercolor-theme`)
+
+An editorial look in the spirit of magazine and newspaper data pages:
+
+- Warm paper and ink colours (light and dark), serif nameplate, dateline and section rules.
+- A masthead watercolour, an illustrated "nothing found" state and a colophon.
+- A small **Gists written, by month** bar chart (last 24 months, busiest month labelled), drawn as plain SVG on the server.
+
+The illustrations are made from public-domain photographs by `tools/watercolor.py` (OpenCV + NumPy, used only to make the images):
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install opencv-python-headless numpy
+.venv/bin/python tools/watercolor.py photo.jpg static/masthead.webp --width 2080 --crop 0,0.47,1,0.79
+```
+
+Sources (all public domain, via Wikimedia Commons): Reading Room, Library of Congress, 1901 (Detroit Publishing Co.); Card Division, Library of Congress, c. 1900–20; Composing room, New York Herald, 1902 (Bain Collection).
+
 ## Check
 
 ```bash

@@ -188,6 +188,14 @@ assert "img-src 'self' data:" in serve.CSP
 
 # public repo: nothing but code may ever be tracked
 tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True, cwd=serve.__file__.rsplit("/", 1)[0]).stdout.split()
-assert set(tracked) <= {"README.md", "serve.py", "test_serve.py", ".gitignore"}, tracked
+allowed = {"README.md", "serve.py", "test_serve.py", ".gitignore", "tools/watercolor.py"} | {f"static/{n}" for n in serve.STATIC}
+assert set(tracked) <= allowed, tracked
+
+# theme: monthly chart counts and labels the busiest month
+mc = serve.month_counts([{"created_at": "2026-11-01T00:00:00Z"}, {"created_at": "2026-11-02T00:00:00Z"},
+                         {"created_at": "2025-12-31T17:00:00Z"}, {"created_at": "2020-01-01T00:00:00Z"}], now=now)
+assert len(mc) == 24 and mc[-1] == (2026, 11, 2) and (2026, 1, 1) in mc and sum(n for *_, n in mc) == 3  # UTC Dec 31 17:00 is Jan 1 in MYT
+svg = serve.month_chart([{"created_at": "2026-11-01T00:00:00Z"}, {"created_at": "2026-11-02T00:00:00Z"}], now=now)
+assert "2 in Nov \u201926" in svg and svg.count("<rect") == 24
 
 print("ok")

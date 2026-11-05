@@ -298,18 +298,18 @@ def search_data(items, field="updated_at"):
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
 
 
-DARK = ("color-scheme:dark;--page:#0b0d10;--surface:#14171c;--fg:#e8eaef;--muted:#a0a7b4;--faint:#6f7683;--line:#242830;--rule:#e8eaef;"
-        "--link:#a9c4f6;--seen:#c7adf2;--hover:#1b2028;--field:#0f1216;--field-line:#2c313a;--focus:#6b96ff;--kbd:#1d2129;"
+DARK = ("color-scheme:dark;--page:#0f1012;--surface:#17181b;--fg:#ece6d8;--muted:#a59e8f;--faint:#746e62;--line:#2a2b2f;--rule:#ece6d8;"
+        "--link:#a9c1e6;--seen:#c9b3ea;--hover:#1f2024;--field:#121315;--field-line:#34363b;--focus:#7aa2e3;--kbd:#1f2024;--accent:#8fb0dc;--credit-bg:rgb(23 24 27 / .82);"
         "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
 :root{color-scheme:light;
- --page:#eef0f3;--surface:#fff;--fg:#16181d;--muted:#5f6673;--faint:#8a919d;--line:#e7e9ed;--rule:#16181d;
- --link:#173a7a;--seen:#5b3f8c;--hover:#f3f6fb;--field:#f6f7f9;--field-line:#d9dce2;--focus:#2f6feb;--kbd:#fff;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
+ --page:#ebe5d8;--surface:#fbf8f1;--fg:#1d1b16;--muted:#6a6356;--faint:#968e7e;--line:#e6dfd0;--rule:#1d1b16;
+ --link:#1f3a5f;--seen:#5b4a7a;--hover:#f4efe3;--field:#f5f0e5;--field-line:#d8cfbc;--focus:#2f5f9e;--kbd:#fbf8f1;--accent:#2f4b73;--credit-bg:rgb(251 248 241 / .85);--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
 :root[data-theme=dark]{DARK}
-html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px}
+html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px;--serif:Georgia,"Iowan Old Style","Times New Roman",serif}
 html[data-font=helvetica]{--ff:Helvetica,"Helvetica Neue",Arial,sans-serif}
 html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif;--fs:13.5px}
 *{box-sizing:border-box}
@@ -387,7 +387,29 @@ dialog.modal[open]{animation:pop .16s ease-out}
 input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
-h2{display:flex;justify-content:space-between;margin:10px 0 2px;padding-bottom:6px;border-bottom:2px solid var(--rule);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-bottom:1px solid var(--line);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
+.masthead{position:relative;margin:0;border-bottom:1px solid var(--line)}
+.masthead img{display:block;width:100%;height:220px;object-fit:cover;object-position:50% 38%}
+.credit{position:absolute;right:10px;bottom:8px;margin:0;padding:2px 8px;font:italic 11px/1.4 var(--serif);color:var(--muted);background:var(--credit-bg);border-radius:2px}
+.nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:20px 24px 16px;border-bottom:3px double var(--rule)}
+.nameplate h1{margin:0;font:700 48px/.95 var(--serif);letter-spacing:-.03em}
+.dateline{margin:10px 0 0;font:italic 14px/1.3 var(--serif);color:var(--muted)}
+.chart-wrap{margin:0;display:grid;gap:4px;justify-items:end}
+.chart-wrap figcaption{font:700 10px/1 var(--ff);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.chart{width:372px;height:74px;color:var(--accent);overflow:visible}
+.chart .bar{fill:currentColor;opacity:.5}.chart .pk{opacity:1}
+.chart text{font:10px var(--serif);fill:var(--muted)}.chart .ann{font-style:italic;fill:var(--fg)}
+.chart line{stroke:var(--rule);stroke-width:1}
+header .brand{display:none}
+.art-empty{padding:28px 0 8px;text-align:center}
+.art-empty img{display:block;width:min(340px,90%);margin:0 auto 14px}
+.art-empty p{margin:0;font:italic 16px/1.4 var(--serif);color:var(--muted)}
+.colophon{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:center;padding:22px 24px 26px;border-top:3px double var(--rule);font:italic 13px/1.6 var(--serif);color:var(--muted)}
+.colophon img{display:block;width:200px;height:auto}
+.colophon p{margin:0}.colophon b{font-style:normal;color:var(--fg)}
+.colophon a{color:inherit;text-decoration:underline;text-decoration-color:var(--field-line)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .art{filter:brightness(.8) contrast(1.06)}}
+:root[data-theme=dark] .art{filter:brightness(.8) contrast(1.06)}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
@@ -438,6 +460,14 @@ dialog.modal.small{width:min(380px,calc(100% - 32px))}
  #t1:checked~.top label[for=t1],#t2:checked~.top label[for=t2]{color:var(--fg);border-color:var(--fg)}
  #t1:focus-visible~.top label[for=t1],#t2:focus-visible~.top label[for=t2]{outline:2px solid var(--focus);outline-offset:-2px}
  main{display:block;padding:0 16px 32px}h2{display:none}
+ .masthead img{height:130px}
+ .credit{position:static;display:block;padding:6px 16px;font-size:10.5px;background:none;border-radius:0}
+ header .meta{flex:1 1 auto;justify-content:space-between}
+ header .search{flex:1 1 180px}
+ .nameplate{grid-template-columns:1fr;gap:14px;padding:14px 16px 14px}
+ .nameplate h1{font-size:36px}
+ .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}
+ .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{width:100%}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -483,7 +513,9 @@ const prefs={font:root.dataset.font,size:root.dataset.size,theme:root.dataset.th
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
 const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filter(b=>b.checked).map(b=>b.value);
-function table(list,msg){if(!list.length){const p=document.createElement("p");p.className="empty";p.textContent=msg;return p}
+function table(list,msg){if(!list.length){const p=document.createElement("div");p.className="empty";
+ if(msg.startsWith("No gists match")){p.className="empty art-empty";const i=new Image();i.src="/static/archive.webp";i.alt="";i.className="art";
+  const t=document.createElement("p");t.textContent=msg.replace("No gists match","Nothing in the stacks matches");p.append(i,t)}else p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
  c.className="t";c.textContent=g[2];
  a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a);
@@ -665,6 +697,59 @@ def settings_dialog(prefs):
     )
 
 
+STATIC = {"masthead.webp", "archive.webp", "press.webp"}  # watercolours made by tools/watercolor.py
+STATIC_DIR = __file__.rsplit("/", 1)[0] + "/static/"
+
+
+def month_counts(items, months=24, now=None):
+    """[(year, month, gists created that month)] for the last `months` months, oldest first (Malaysia time)."""
+    now = now or datetime.now(MYT)
+    keys, y, m = [], now.year, now.month
+    for _ in range(months):
+        keys.append((y, m))
+        y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+    counts = dict.fromkeys(reversed(keys), 0)
+    for g in items:
+        dt = datetime.fromisoformat(g["created_at"].replace("Z", "+00:00")).astimezone(MYT)
+        if (dt.year, dt.month) in counts:
+            counts[(dt.year, dt.month)] += 1
+    return [(y, m, n) for (y, m), n in counts.items()]
+
+
+def month_chart(items, now=None):
+    """A small editorial bar chart: one bar a month, the busiest month labelled. Plain SVG, no script."""
+    data = month_counts(items, now=now)
+    W, base, tall = 372, 54, 40
+    bw = W / len(data)
+    top = max(n for *_, n in data) or 1
+    peak = max(range(len(data)), key=lambda i: data[i][2])
+    mon = lambda y, m: datetime(y, m, 1).strftime("%b") + f" \u2019{y % 100:02d}"
+    bars = "".join(
+        f'<rect class="bar{" pk" if i == peak else ""}" x="{i * bw + 1:.1f}" y="{base - max(1, round(n * tall / top))}" '
+        f'width="{bw - 2:.1f}" height="{max(1, round(n * tall / top))}"><title>{mon(y, m)}: {n}</title></rect>'
+        for i, (y, m, n) in enumerate(data)
+    )
+    py, pm, pn = data[peak]
+    px = min(max(peak * bw + bw / 2, 40), W - 40)
+    return (
+        f'<svg class="chart" viewBox="0 0 {W} 74" role=img aria-label="Gists written per month over the last {len(data)} months. '
+        f'Busiest: {mon(py, pm)}, {pn}.">{bars}<line x1="0" x2="{W}" y1="{base + .5}" y2="{base + .5}"/>'
+        f'<text class="ann" x="{px:.1f}" y="{base - max(1, round(pn * tall / top)) - 5}" text-anchor="middle">{pn} in {mon(py, pm)}</text>'
+        f'<text x="0" y="68">{mon(*data[0][:2])}</text><text x="{W}" y="68" text-anchor="end">{mon(*data[-1][:2])}</text></svg>'
+    )
+
+
+CREDITS = (
+    '<p><b>Illustrations</b> are watercolour renderings, made with OpenCV, of public-domain photographs: '
+    '<a href="https://commons.wikimedia.org/wiki/File:Reading_room,_Library_of_Congress,_Washington,_D.C.,_1901.jpg" rel="noreferrer">'
+    'Reading Room, Library of Congress, 1901</a> (Detroit Publishing Co.); '
+    '<a href="https://commons.wikimedia.org/wiki/File:Card_Division_of_the_Library_of_Congress_3c18631u_original.jpg" rel="noreferrer">'
+    'Card Division, Library of Congress, c. 1900\u201320</a>; '
+    '<a href="https://commons.wikimedia.org/wiki/File:Herald-composing-1902.jpg" rel="noreferrer">'
+    'Composing room, New York Herald, 1902</a> (George Grantham Bain Collection).</p>'
+)
+
+
 def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
     sort = sort if sort in SORTS else "updated"
     field = f"{sort}_at"
@@ -692,6 +777,11 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         "localgist",
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
+        '<figure class="masthead"><img class="art" src="/static/masthead.webp" width=2080 height=858 alt="">'
+        '<figcaption class="credit">The Reading Room, Library of Congress, 1901. Watercolour after a Detroit Publishing Co. photochrom.</figcaption></figure>'
+        f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
+        f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
+        f'<figure class="chart-wrap"><figcaption>Gists written, by month</figcaption>{month_chart(held)}</figure></div>'
         '<div class="top"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
@@ -703,6 +793,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
         f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
         f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
+        f'<footer class="colophon"><img class="art" src="/static/press.webp" width=1000 height=620 alt="" loading=lazy>{CREDITS}</footer>'
         f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
         f'<script type="application/json" id=d data-v="{html.escape(signature(held))}" data-csrf="{CSRF}">{search_data(items, field)}</script>',
@@ -732,6 +823,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         if url.path == "/version":  # polled by an open page; does not count as use, so idle stop still works
             return self.send(200, version(), "text/plain")
+        if url.path.startswith("/static/") and url.path[8:] in STATIC:  # fixed list: no path tricks
+            return self.send_static(url.path[8:])
         if url.path == "/ping":  # lets a second `pyup` find this server; does not count as use
             return self.send(200, "localgist", "text/plain")
         _last_hit[0] = time.clock_gettime(CLOCK)
@@ -747,6 +840,17 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, "not found", "text/plain")
         except Exception as e:  # GitHub down, token expired, etc.
             return self.send(502, shell("error", f"<p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p>"))
+
+    def send_static(self, name):
+        with open(STATIC_DIR + name, "rb") as f:
+            data = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", "image/webp")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "max-age=86400")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools

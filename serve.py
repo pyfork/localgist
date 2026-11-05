@@ -383,7 +383,7 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:var(--r);cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
 .chip .hi{width:14px;height:14px;padding:1px;border-radius:var(--rs);border:1.5px solid var(--faint);color:transparent}
 .chip:hover{color:var(--fg)}
-.chip:has(input:checked){color:var(--fg);border-color:var(--fg)}
+.chip:has(input:checked){color:var(--fg)}  /* the tick alone shows the choice; no dark outline */
 .chip:has(input:checked) .hi{background:var(--fg);border-color:var(--fg);color:var(--surface)}
 .chip:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
 #st{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}

@@ -312,7 +312,7 @@ DARK = ("color-scheme:dark;--page:#0f1012;--surface:#17181b;--fg:#ece6d8;--muted
         "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
-:root{color-scheme:light;--r:6px;--rs:4px;  /* Finviz: 6px controls and tables, 4px small items */
+:root{color-scheme:light;--r:6px;--rs:4px;--band:var(--surface);  /* Finviz: 6px controls and tables, 4px small items */
  --page:#ebe5d8;--surface:#fbf8f1;--fg:#1d1b16;--muted:#6a6356;--faint:#968e7e;--line:#e6dfd0;--rule:#1d1b16;
  --link:#1f3a5f;--seen:#5b4a7a;--hover:#f4efe3;--field:#f5f0e5;--field-line:#d8cfbc;--focus:#2f5f9e;--kbd:#fbf8f1;--accent:#2f4b73;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
@@ -345,7 +345,7 @@ button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--rs)}
 .wrap{width:min(1440px,100%);min-height:100vh;margin:0 auto;background:var(--surface);overflow:clip}  /* Finviz: list runs the full band, no card */
-.top{background:var(--surface)}
+.top{background:var(--band)}.top .search input{background:var(--surface)}  /* Finviz: the header band has its own tint; the search box stays white */
 /* Finviz layout: the header runs the full window width; only the list below sits in the centred column */
 .bar{border-bottom:1px solid var(--line)}
 .bar>header,.bar>.scope{max-width:1440px;margin:0 auto;border-bottom:0}
@@ -438,6 +438,8 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:12px 20px 28px}
 h2{margin:14px 0 2px;padding:8px 0 6px;font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
 html[data-palette=economist] h2::before{content:"";display:block;width:40px;height:4px;margin-bottom:8px;background:var(--accent)}  /* Economist: short red bar over section names */
 html:not([data-palette=finviz]){--r:0;--rs:0}  /* editorial themes are square */
+html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=finviz]{--band:#2a2f3a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=finviz]{--band:#2a2f3a}}  /* Finviz only: tinted header band; editorial themes keep one paper colour */
 .strip{display:flex;height:8px}.strip i{flex:1}
 .strip i:nth-child(1){background:var(--w1)}.strip i:nth-child(2){background:var(--w2)}.strip i:nth-child(3){background:var(--w3)}
 .nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:14px 24px 12px;border-bottom:1px solid var(--line)}
@@ -514,6 +516,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .meta{gap:8px}
  kbd{display:none}
  .m-row.ask{flex-wrap:wrap}
+ .seg:has(input[name=font]){flex-wrap:wrap}.seg:has(input[name=font]) label{flex:1 1 45%}  /* four fonts: 2 x 2 on phones */
  dialog.modal{width:calc(100% - 24px);min-width:0}.m-body.grid{grid-template-columns:1fr;gap:26px;padding:24px 18px}
  .m-head{padding:14px 12px 12px 18px}.m-foot{padding:12px 14px 12px 18px}
  .pcards{grid-template-columns:repeat(2,minmax(0,1fr))}.ask .m-msg{flex-basis:100%;margin-bottom:4px}

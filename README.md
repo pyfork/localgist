@@ -27,6 +27,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `Nov-04`, right-aligned, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
 - While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
+- The header band has its own tint, a light grey in light mode and a lighter panel in dark mode, with the list area below it plain, as on Finviz.
 
 ## Search
 

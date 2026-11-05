@@ -27,7 +27,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
 - Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `Nov-04`, right-aligned, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
 - **Reload from GitHub** (Heroicons arrow-path-rounded-square) sits right of the localgist title; with no masthead (Minimal, or under 1024px) it sits next to the small name in the toolbar, with a 44px tap area on phones.
-- While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
+- While the list page is open and visible, it checks for new or edited gists every minute (and reloads the full list from GitHub every 5 minutes) and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 - The header band has its own tint, a light grey in light mode and a lighter panel in dark mode, with the list area below it plain, as on Finviz.
 
@@ -80,6 +80,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 ## Security
 
 - Listens on `127.0.0.1` only; any other `Host` header gets 403 (blocks DNS rebinding).
+- Anything that can spend your GitHub quota (Reload from GitHub, the update check, content search) is a POST with the same checks as Delete: matching `Origin`, a same-origin fetch and the per-run token. Another website can open the list page, but it only gets the cached list: once the list is loaded, it cannot start a GitHub fetch. Refused requests write one line to the server log.
 - Token comes from `gh auth token` at start, held in memory, never written to disk.
 - Gist list and content index live in memory only; nothing about your gists is stored in this repo.
 - Strict CSP: only the one page script may run (pinned by hash), it can only talk to localgist, images only from localgist, fonts only from Google Fonts, no framing, no forms.

@@ -1,5 +1,8 @@
 """Self-check: python3 test_serve.py (no network, no token)."""
 import base64
+import contextlib
+import io
+import urllib.error
 import hashlib
 import json
 import socket
@@ -35,7 +38,10 @@ assert serve.gist_url({"id": "ab12", "html_url": "javascript:alert(1)"}) == "htt
 evil = [{"id": "a1", "updated_at": "2026-11-03T10:00:00Z", "html_url": "https://gist.github.com/a1",
          "description": "x</script><b>", "files": {"Notes.md": {}}}]
 d = serve.search_data(evil)
-assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
+assert "<" not in d and '"x\\u003c/script>\\u003cb>"' in d and '"notes.md"' in d, d
+assert json.loads(d)[0][4] == "x</script><b>"  # the page's JSON.parse gets the text back unchanged
+evil[0]["description"] = "<!--<script> hi"  # this one makes a browser swallow the closing </script> if any < is left
+assert "<" not in serve.search_data(evil)
 
 # prefs cookie: defaults, valid values kept, junk dropped
 assert serve.read_prefs(None) == {"palette": "finviz", "font": "arial", "theme": "system", "mast": "on", "top": "on", "open": "same", "in": "desc"}
@@ -48,8 +54,8 @@ assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "theme": "dark", "mast": "off", "top": "off", "open": "new", "in": "desc,content"})
-assert '{reload}' not in page and page.count('class="refresh"') == 2  # beside the title and beside the toolbar name
+page = serve.index_page(1, "updated", {"palette": "sage", "font": "source", "theme": "dark", "mast": "off", "top": "off", "open": "new", "in": "desc,content"})
+assert '{reload}' not in page and "refresh=1" not in page and page.count('class="refresh"') == 2  # beside the title and beside the toolbar name
 assert 'data-top="off"' in page and 'name=top value=off checked' in page and 'id=totop' in page
 assert serve.read_prefs("lg=top%3Doff")["top"] == "off" and serve.read_prefs("lg=top%3Devil")["top"] == "on"
 assert 'data-mast="off"' in page and 'name=mast value=off checked' in page
@@ -67,7 +73,7 @@ assert 'data-font="source"' in page and "showtime" not in page and "fonts.google
 assert 'href="https://gist.github.com/g1" target=_blank rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page
 assert 'value=content checked' in page and 'value=file>' in page
 assert "<h2>Page one</h2>" in page and "<h2>Page two</h2>" in page and "Gists</span>" not in page
-plain = serve.index_page(1, False)
+plain = serve.index_page(1)
 assert "<link id=fsrc" not in plain and 'href="https://gist.github.com/g1" rel=' in plain  # same window by default
 assert "<dialog id=settings" in plain and "value=same checked" in plain
 assert serve.column_name(2) == "Page three" and serve.column_name(11) == "Page 12"
@@ -86,17 +92,89 @@ def call(headers):
     return r.status, body
 host = f"localhost:{port}"
 ok_headers = {"Host": host, "Origin": f"http://{host}", "Sec-Fetch-Site": "same-origin", "X-CSRF": serve.CSRF}
-assert call({**ok_headers, "X-CSRF": "wrong"})[0] == 403
-assert call({**ok_headers, "Origin": "https://evil.example"})[0] == 403
-assert call({**ok_headers, "Sec-Fetch-Site": "cross-site"})[0] == 403
-assert call({k: v for k, v in ok_headers.items() if k != "Origin"})[0] == 403
-assert call({**ok_headers, "Host": "evil.example", "Origin": "http://evil.example"})[0] == 403
+with contextlib.redirect_stderr(io.StringIO()) as err:
+    assert call({**ok_headers, "X-CSRF": "wrong"})[0] == 403
+    assert call({**ok_headers, "Origin": "https://evil.example"})[0] == 403
+    assert call({**ok_headers, "Sec-Fetch-Site": "cross-site"})[0] == 403
+    assert call({k: v for k, v in ok_headers.items() if k != "Origin"})[0] == 403
+    assert call({**ok_headers, "Host": "evil.example", "Origin": "http://evil.example"})[0] == 403
+assert err.getvalue().count("localgist: refused DELETE '/api/gists/ab1'") == 5, err.getvalue()  # each refusal leaves one log line
+assert "Origin 'https://evil.example'" in err.getvalue()
 assert deleted == []                                             # nothing reached GitHub so far
 serve._list["gists"] = [{"id": "ab1", "updated_at": "1"}]
 serve._content["ab1"] = ("x", "text")
 status, body = call(ok_headers)
 assert status == 200 and json.loads(body)["v"] == "0" and deleted == [("DELETE", "/gists/ab1")]
 assert serve._list["gists"] == [] and "ab1" not in serve._content
+# a refresh in flight during a delete lands after it: the deleted gist must stay gone
+started, go = threading.Event(), threading.Event()
+both = [{"id": "ef3", "updated_at": "1"}, {"id": "cd2", "updated_at": "1"}]
+serve._list["gists"] = list(both)
+real_fetch = serve.fetch_all
+serve.fetch_all = lambda: (started.set(), go.wait(5), list(both))[-1]  # GitHub answers with the old list, slowly
+try:
+    t = threading.Thread(target=serve._load); t.start()
+    assert started.wait(5)
+    serve.delete_gist("ef3")                                     # the delete finishes while the fetch is out
+    go.set(); t.join(5)
+finally:
+    serve.fetch_all = real_fetch
+assert [g["id"] for g in serve._list["gists"]] == ["cd2"], serve._list["gists"]
+# the deleted-id list is pruned: a fetch that began over a minute after a delete drops that id from it
+serve._gone["old"] = _t.time() - serve.GONE_GRACE - 5
+serve.fetch_all = lambda: [{"id": "cd2", "updated_at": "1"}]
+try:
+    serve._load()
+finally:
+    serve.fetch_all = real_fetch
+assert "old" not in serve._gone and "ef3" in serve._gone, serve._gone      # ef3 was deleted just now: still filtered
+serve._gone.clear()  # later tests start with no deleted ids
+# GET serves pages only: bad page numbers are page 1 (not a false "GitHub fetch failed"); ?refresh does nothing
+seen, real_index = [], serve.index_page
+serve.index_page = lambda p, *a: seen.append(p) or "page"
+def req(method, path, headers):
+    seen.clear()
+    c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    c.request(method, path, headers=headers); r = c.getresponse(); body = r.read(); c.close()
+    return r.status, body, list(seen)
+try:
+    assert req("GET", "/?p=%C2%B2", {"Host": host})[::2] == (200, [1])                # "²"
+    assert req("GET", "/?p=" + "9" * 5000, {"Host": host})[::2] == (200, [1])         # past int()'s digit limit
+    assert req("GET", "/?p=2", {"Host": host})[::2] == (200, [2])
+    assert req("GET", "/search?q=x", {"Host": host})[0] == req("GET", "/version", {"Host": host})[0] == 404
+    # only GitHub trouble is called a GitHub failure; our own bug is a 500 with its real name
+    def boom(e):
+        def f(*a): raise e
+        return f
+    serve.index_page = boom(urllib.error.URLError("down"))
+    st, body, _ = req("GET", "/", {"Host": host})
+    assert st == 502 and b"GitHub fetch failed" in body, body
+    serve.index_page = boom(KeyError("oops"))
+    with contextlib.redirect_stderr(io.StringIO()) as err:
+        st, body, _ = req("GET", "/", {"Host": host})
+    assert st == 500 and b"localgist error: KeyError" in body and b"GitHub" not in body and "Traceback" in err.getvalue(), body
+finally:
+    serve.index_page = real_index
+# POST: refresh, update check and search spend GitHub quota, so only our page (same origin + CSRF token) may ask
+fetches, real_fetch = [], serve.fetch_all
+serve.fetch_all = lambda: fetches.append(1) or [{"id": "cd2", "updated_at": "1"}]
+serve._checked[0] = _t.time()  # the update check stays quiet: no GitHub call from /api/version
+try:
+    with contextlib.redirect_stderr(io.StringIO()):  # each refusal logs a line; keep test output quiet
+        for bad in ({**ok_headers, "X-CSRF": "wrong"}, {**ok_headers, "Sec-Fetch-Site": "same-site"},
+                    {**ok_headers, "Sec-Fetch-Site": "cross-site"}, {"Host": host},                # curl, or a browser with no Fetch Metadata
+                    {k: v for k, v in ok_headers.items() if k != "Origin"}):
+            for path in ("/api/refresh", "/api/search?q=x&in=content", "/api/version"):
+                assert req("POST", path, bad)[0] == 403, (path, bad)
+    assert fetches == [] and not serve._ilock.locked()                                    # nothing reached GitHub
+    assert req("POST", "/api/refresh", ok_headers)[:2] == (200, b'{"v": "1-cd2-1"}') and fetches == [1]
+    assert json.loads(req("POST", "/api/search?q=x", ok_headers)[1])["ids"] == []
+    assert req("POST", "/api/version", ok_headers)[:2] == (200, b"1-cd2-1")
+    assert req("POST", "/api/nope", ok_headers)[0] == 404
+    serve.fetch_all = boom(TimeoutError("slow"))
+    assert req("POST", "/api/refresh", ok_headers)[:2] == (502, b"GitHub fetch failed: slow")
+finally:
+    serve.fetch_all = real_fetch
 srv.shutdown(); srv.server_close(); serve.PORT = old_port
 
 # content search: fields combine, words must all match, results grow while the index builds
@@ -139,20 +217,15 @@ def fake_gh(path, body=None, with_headers=False):
 serve.gh = fake_gh
 assert [g["id"] for g in serve.fetch_all()] == ["old-edited", "y", "x"]
 
-# list cache: first load waits, a stale list is served at once and refreshed in the background
+# list cache: first load waits; after that only ↻ or the page's update check fetches
 calls = []
 serve._list.update(at=0.0, gists=[])
 serve.fetch_all = lambda: calls.append(1) or [{"id": str(len(calls))}]
 assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # cold: fetched in-line
 assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # fresh: no fetch
 serve._list["at"] -= serve.STALE_SECONDS + 1
-assert serve.gists()[0]["id"] == "1"                            # stale: old list returned at once
-for _ in range(50):
-    if len(calls) == 2 and not serve._lock.locked():
-        break
-    _t.sleep(0.01)
-assert serve.gists()[0]["id"] == "2" and len(calls) == 2        # ...and replaced behind it
-assert serve.gists(refresh=True)[0]["id"] == "3"                # ↻ forces a fetch
+assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # stale: a page load still never fetches
+assert serve.gists(refresh=True)[0]["id"] == "2"                # ↻ forces a fetch
 
 # update check: a new or edited gist on GitHub changes the version the page polls
 def wait_unlocked():
@@ -169,6 +242,11 @@ serve._checked[0] = 0
 serve.gh = lambda path, *a, **k: json.dumps([{"id": "b", "updated_at": "2026-11-05T02:00:00Z"}, {"id": "a", "updated_at": "2026-11-05T01:00:00Z"}])
 serve.version(); wait_unlocked()
 assert serve.version() == "2-b-2026-11-05T02:00:00Z"            # new gist: list reloaded, page sees a new version
+serve._list.update(at=_t.time() - serve.STALE_SECONDS - 1, gists=[{"id": "a", "updated_at": "2026-11-05T01:00:00Z"}])
+serve._checked[0] = 0
+serve.gh = lambda path, *a, **k: "[]"                            # nothing newer, but the list is stale
+serve.version(); wait_unlocked()
+assert serve.version() == "2-b-2026-11-05T02:00:00Z"            # stale: full reload (catches deletes on github.com)
 serve._checked[0] = _t.time()
 serve.gh = lambda *a, **k: (_ for _ in ()).throw(AssertionError("checked GitHub too soon"))
 serve.version()                                                  # within 60 s: no GitHub call
@@ -194,9 +272,11 @@ finally:
 # page script must parse (a duplicate name once broke the whole page); needs node, skipped without it
 import shutil, tempfile
 if shutil.which("node"):
-    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
-        f.write(serve.JS)
-    r = subprocess.run(["node", "--check", f.name], capture_output=True, text=True)
+    with tempfile.TemporaryDirectory() as d:  # removed afterwards; one stray file per run used to pile up in $TMPDIR
+        js = f"{d}/page.js"
+        with open(js, "w") as f:
+            f.write(serve.JS)
+        r = subprocess.run(["node", "--check", js], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
 # CSP: only the shipped script, no inline scripts, images only from this server

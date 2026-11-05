@@ -39,7 +39,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 ## Rows
 
 - Each row: stamp, description, comment count (when the gist has comments), then two buttons that appear on hover (always shown on touch screens):
-  - **Copy link**: copies the GitHub URL; the icon turns into a tick and "Link copied" shows.
+  - **Copy link** (2.5× as wide as Delete, so the safe action is the easy one to hit): copies the GitHub URL; the icon turns into a tick and "Link copied" shows.
   - **Delete**: the row turns red and asks, in place, "Delete for good? **Yes** / **No**". No is focused; Esc or clicking elsewhere also means No. Yes deletes it from GitHub for good and removes the row.
 - Delete only works from this page: the server requires a matching `Origin`, a same-origin fetch and a per-run secret token, so other websites and stray tools cannot trigger it.
 

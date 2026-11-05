@@ -38,18 +38,17 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs(None) == {"font": "arial", "theme": "system", "open": "same", "in": "desc"}
 assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
-    {"font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
+    {"font": "source", "theme": "dark", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
-assert 'data-size="l" data-theme="dark"' in page
-assert 'name=hsize value=l aria-label="Large text" checked' in page and 'name=size value=l aria-label="Large text" checked' in page
+page = serve.index_page(1, False, "updated", {"font": "source", "theme": "dark", "open": "new", "in": "desc,content"})
+assert 'data-font="source" data-theme="dark"' in page and 'data-size' not in page and 'sizeseg' not in page
 assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page
 assert f'data-csrf="{serve.CSRF}"' in page and "&quot;theme&quot;: &quot;system&quot;" in page  # Reset defaults ride on the dialog
 assert serve.comments({"comments": 3}).startswith('<sup class="cd"') and "3 comments" in serve.comments({"comments": 3})

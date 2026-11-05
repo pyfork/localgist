@@ -223,10 +223,9 @@ def search(q, scopes):
 
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica", "plex": "IBM Plex Sans"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
-SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is the default
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
-DEFAULT_PREFS = {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("font", "size", "theme", "open")  # what the settings window edits and Reset restores
+DEFAULT_PREFS = {"font": "arial", "theme": "system", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("font", "theme", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -239,8 +238,6 @@ def read_prefs(cookie_header):
         q = parse_qs(unquote(c["lg"].value))
         if (f := q.get("font", [""])[0]) in FONTS:
             p["font"] = f
-        if (z := q.get("size", [""])[0]) in SIZES:
-            p["size"] = z
         if (th := q.get("theme", [""])[0]) in THEMES:
             p["theme"] = th
         if (o := q.get("open", [""])[0]) in OPENS:
@@ -303,24 +300,23 @@ DARK = ("color-scheme:dark;--page:#0b0d10;--surface:#14171c;--fg:#e8eaef;--muted
         "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
-:root{color-scheme:light;
+:root{color-scheme:light;--r:6px;--rs:4px;  /* Finviz: 6px controls and tables, 4px small items */
  --page:#eef0f3;--surface:#fff;--fg:#16181d;--muted:#5f6673;--faint:#8a919d;--line:#e7e9ed;--rule:#16181d;
  --link:#173a7a;--seen:#5b3f8c;--hover:#f3f6fb;--field:#f6f7f9;--field-line:#d9dce2;--focus:#2f6feb;--kbd:#fff;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
 :root[data-theme=dark]{DARK}
-html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px}
+html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12px}  /* Finviz news rows are 12px */
 html[data-font=helvetica]{--ff:Helvetica,"Helvetica Neue",Arial,sans-serif}
-html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif;--fs:13.5px}
+html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif}
 html[data-font=plex]{--ff:"IBM Plex Sans",Arial,sans-serif;--fw:420}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{background:var(--surface)}
-html{--scale:1}html[data-size=s]{--scale:.9}html[data-size=l]{--scale:1.15}
-body{margin:0;background:var(--surface);color:var(--fg);font:var(--fw,400) calc(var(--fs) * var(--scale))/1.45 var(--ff);-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--surface);color:var(--fg);font:var(--fw,400) var(--fs)/1.45 var(--ff);-webkit-font-smoothing:antialiased}
 button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
-a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--rs)}
 .wrap{width:min(1440px,100%);min-height:100vh;margin:0 auto;background:var(--surface);overflow:clip}  /* Finviz: list runs the full band, no card */
 .top{background:var(--surface)}
 /* Finviz layout: the header runs the full window width; only the list below sits in the centred column */
@@ -330,27 +326,27 @@ header{position:relative;display:flex;align-items:center;gap:16px;padding:14px 2
 .brand{font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--fg)}.brand:visited{color:var(--fg)}
 .search{position:relative;flex:1 1 220px;max-width:380px;min-width:0}
 .search svg{position:absolute;left:10px;top:50%;translate:0 -50%;width:14px;height:14px;stroke:var(--faint);fill:none;stroke-width:2;pointer-events:none}
-.search input{width:100%;height:34px;padding:0 52px 0 32px;font-size:13px;color:var(--fg);background:var(--field);border:1px solid var(--field-line);border-radius:8px;outline:none;transition:border-color .12s,box-shadow .12s}
+.search input{width:100%;height:34px;padding:0 52px 0 32px;font-size:13px;color:var(--fg);background:var(--field);border:1px solid var(--field-line);border-radius:var(--r);outline:none;transition:border-color .12s,box-shadow .12s}
 .search input::placeholder{color:var(--faint)}
 .search input:focus{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 22%,transparent);background:var(--surface)}
 .search input::-webkit-search-cancel-button{display:none}
-kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-monospace,SFMono-Regular,monospace;color:var(--muted);background:var(--kbd);border:1px solid var(--field-line);border-bottom-width:2px;border-radius:5px;padding:3px 6px;pointer-events:none}
+kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-monospace,SFMono-Regular,monospace;color:var(--muted);background:var(--kbd);border:1px solid var(--field-line);border-bottom-width:2px;border-radius:var(--rs);padding:3px 6px;pointer-events:none}
 .search input:focus+kbd{opacity:0}
-.sort{display:inline-flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px;flex:none}
-.sort a,.sort b{height:28px;padding:0 11px;display:inline-grid;place-items:center;border-radius:6px;font-size:12px;font-weight:500;color:var(--muted)}
+.sort{display:inline-flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:var(--r);flex:none}
+.sort a,.sort b{height:28px;padding:0 11px;display:inline-grid;place-items:center;border-radius:var(--rs);font-size:12px;font-weight:500;color:var(--muted)}
 .sort a:visited{color:var(--muted)}.sort a:hover{color:var(--fg);text-decoration:none;background:var(--hover)}
 .sort b{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .meta{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .meta nav{display:flex;gap:4px;align-items:center}
-.meta nav a,.meta nav b{min-width:24px;height:24px;display:inline-grid;place-items:center;border-radius:6px;padding:0 6px}
+.meta nav a,.meta nav b{min-width:24px;height:24px;display:inline-grid;place-items:center;border-radius:var(--rs);padding:0 6px}
 .meta nav b{background:var(--fg);color:var(--surface);font-weight:600}
 .meta nav a:hover{background:var(--hover);text-decoration:none}
-.icon-btn{flex:none;width:34px;height:34px;display:inline-grid;place-items:center;padding:0;border:1px solid var(--field-line);background:var(--field);border-radius:8px;color:var(--muted);cursor:pointer}
+.icon-btn{flex:none;width:34px;height:34px;display:inline-grid;place-items:center;padding:0;border:1px solid var(--field-line);background:var(--field);border-radius:var(--r);color:var(--muted);cursor:pointer}
 .hi{width:18px;height:18px;flex:none}
 .icon-btn:hover{color:var(--fg)}.icon-btn.ghost{border-color:transparent;background:none}.icon-btn.ghost:hover{background:var(--hover)}
 .refresh{color:var(--muted)}.refresh .hi{width:16px;height:16px}.refresh:visited{color:var(--muted)}.refresh:hover{color:var(--fg)}
 .search svg.hi{width:16px;height:16px;stroke:var(--faint)}
-dialog.modal{DARK;width:min(60vw,1100px);min-width:min(640px,calc(100% - 32px));max-height:calc(100% - 48px);padding:0;border:1px solid rgb(255 255 255 / .08);border-radius:14px;
+dialog.modal{DARK;width:min(60vw,1100px);min-width:min(640px,calc(100% - 32px));max-height:calc(100% - 48px);padding:0;border:1px solid rgb(255 255 255 / .08);border-radius:var(--r);
  --surface:#2b2d31;--field:#1f2124;background:rgb(32 33 36 / .96);color:var(--fg);box-shadow:0 24px 80px rgb(0 0 0 / .55);overflow:auto}  /* Gmail-help style: always a dark panel */
 dialog.modal::backdrop{background:rgb(0 0 0 / .62)}
 dialog.modal[open]{animation:pop .16s ease-out}
@@ -368,24 +364,24 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .m-msg.ok{color:#1f8a4c}.m-msg.dirty{color:var(--fg);font-weight:600}
 .m-msg .hi{width:16px;height:16px}
 .ask .m-msg{color:var(--fg);font-weight:600}
-.btn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--field-line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn{height:34px;padding:0 14px;border-radius:var(--r);border:1px solid var(--field-line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--fg)}
 .btn.primary{background:var(--fg);color:var(--surface);border-color:var(--fg)}.btn.primary:hover{filter:brightness(1.15)}
 .btn.primary:disabled{opacity:.35;cursor:default;filter:none}
 .btn.danger{background:#c62828;border-color:#c62828;color:#fff}.btn.danger:hover{filter:brightness(1.1)}
-.seg{display:flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px}
+.seg{display:flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:var(--r)}
 .seg label{flex:1;position:relative;cursor:pointer}
 .seg input,.chip input{position:absolute;opacity:0;pointer-events:none}
 .f-same,.f-new{font-family:inherit}
-.seg span{display:grid;place-items:center;height:30px;padding:0 6px;border-radius:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.seg span{display:grid;place-items:center;height:30px;padding:0 6px;border-radius:var(--rs);font-size:13px;color:var(--muted);white-space:nowrap}
 .seg label:hover span{color:var(--fg)}
 .seg label:has(input:checked) span{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .seg label:has(input:focus-visible) span{outline:2px solid var(--focus)}
 .f-arial{font-family:Arial,sans-serif}.f-source{font-family:"Source Sans 3",Arial,sans-serif}.f-helvetica{font-family:Helvetica,Arial,sans-serif}.f-plex{font-family:"IBM Plex Sans",Arial,sans-serif}
 .hint{margin:8px 0 0;color:var(--faint);font-size:11.5px}
 .scope{display:flex;align-items:center;gap:8px;padding:8px 24px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
-.chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:999px;cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
-.chip .hi{width:14px;height:14px;padding:1px;border-radius:4px;border:1.5px solid var(--faint);color:transparent}
+.chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:var(--r);cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
+.chip .hi{width:14px;height:14px;padding:1px;border-radius:var(--rs);border:1.5px solid var(--faint);color:transparent}
 .chip:hover{color:var(--fg)}
 .chip:has(input:checked){color:var(--fg);border-color:var(--fg)}
 .chip:has(input:checked) .hi{background:var(--fg);border-color:var(--fg);color:var(--surface)}
@@ -395,18 +391,18 @@ input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:12px 20px 28px}
 h2{display:flex;justify-content:space-between;margin:10px 0 0;padding-bottom:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 tr:last-child td{border-bottom:0}
 tr:hover td{background:var(--hover)}
 td{height:27px;padding:4px 4px 3px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
-td.t{width:calc(68px * var(--scale));padding:5px 8px 0 4px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:calc(11.5px * var(--scale))}
+td.t{width:68px;padding:5px 8px 0 4px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 .empty{color:var(--muted);padding:14px 0;margin:0}
 td.act{width:0;padding:0;overflow:visible;white-space:nowrap}
 .acts{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 2px 0 18px;background:linear-gradient(90deg,transparent,var(--hover) 16px);opacity:0}
 tr:hover .acts,tr:focus-within .acts{opacity:1}
 td a{display:inline-block;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis;vertical-align:top}
 .cd{display:inline-block;width:5px;height:5px;margin-left:3px;border-radius:50%;background:var(--link);vertical-align:top}  /* superscript dot: this gist has comments */
-.ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:6px;background:none;color:var(--faint);cursor:pointer;opacity:0}
+.ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:var(--rs);background:none;color:var(--faint);cursor:pointer;opacity:0}
 .ib .hi{width:15px;height:15px}
 .ib.copy{width:65px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font:600 11px/1 var(--ff)}  /* 2.5x the delete button: the safe action is the easy target */
 tr:hover .ib,tr:focus-within .ib,.ib:focus-visible{opacity:1}
@@ -418,32 +414,18 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc{position:absolute;right:0;top:0;bottom:0;z-index:1;display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;white-space:nowrap;
  background:linear-gradient(90deg,transparent,color-mix(in srgb,#c62828 9%,var(--surface)) 10px)}
 .rc-q{font-weight:600;color:#c62828;font-size:12px}
-.rc button{height:20px;padding:0 9px;border-radius:5px;font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
+.rc button{height:20px;padding:0 9px;border-radius:var(--rs);font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
 .rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
-.sizeseg{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 11px;border:1px solid var(--field-line);border-radius:8px;background:var(--field);color:var(--muted)}
-.sizeseg .sa,.sizeseg .sb{font-family:Georgia,"Times New Roman",serif;font-weight:600;line-height:1}.sizeseg .sa{font-size:10.5px}.sizeseg .sb{font-size:16px}
-.sizeseg .track{position:relative;display:flex;align-items:center;gap:6px}
-.sizeseg .track::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:1px;background:var(--field-line)}
-.sizeseg label{position:relative;display:grid;place-items:center;width:16px;height:24px;cursor:pointer}
-.sizeseg input{position:absolute;opacity:0;pointer-events:none}
-.sizeseg .dot{position:relative;border-radius:50%;background:var(--field);border:1.5px solid var(--muted);transition:transform .12s}
-.sizeseg .d-s{width:7px;height:7px}.sizeseg .d-m{width:10px;height:10px}.sizeseg .d-l{width:13px;height:13px}
-.sizeseg label:hover .dot{border-color:var(--fg);transform:scale(1.15)}
-.sizeseg label:has(input:checked) .dot{background:var(--fg);border-color:var(--fg)}
-.sizeseg label:has(input:focus-visible) .dot{outline:2px solid var(--focus);outline-offset:2px}
-.m-body .sizeseg{height:44px;padding:0 16px;gap:12px}.m-body .sizeseg .track{gap:14px}.m-body .sizeseg label{width:22px;height:32px}
-.m-body .sizeseg .d-s{width:9px;height:9px}.m-body .sizeseg .d-m{width:13px;height:13px}.m-body .sizeseg .d-l{width:17px;height:17px}
-.m-body .sizeseg .sa{font-size:13px}.m-body .sizeseg .sb{font-size:21px}
-.btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
-.note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
-.toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
+.m-body .m-body .m-body .btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
+.note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:var(--r);background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
+.toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:var(--r);background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#3ccf7a}
 .toast:hover{filter:brightness(1.1)}
 @keyframes rise{from{opacity:0;translate:-50% 8px}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
 @media (max-width:767px){
- html{--fs:14px}html[data-font=source]{--fs:15px}
+ html{--fs:14px}
  .wrap{width:auto;margin:0;border:0;border-radius:0;box-shadow:none;min-height:100vh}
  .top{position:sticky;top:0;z-index:2}
  header{flex-wrap:wrap;gap:10px 10px;padding:12px 16px}
@@ -454,7 +436,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .m-row.ask{flex-wrap:wrap}
  dialog.modal{width:calc(100% - 24px);min-width:0}.m-body.grid{grid-template-columns:1fr;gap:26px;padding:24px 18px}
  .m-head{padding:14px 12px 12px 18px}.m-foot{padding:12px 14px 12px 18px}
- .hsize{display:none}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
+ .ask .m-msg{flex-basis:100%;margin-bottom:4px}
  .scope{display:none;padding:8px 16px;gap:6px;overflow-x:auto}.scope>span:first-child{display:none}
  .top:focus-within .scope,.top:has(#q:not(:placeholder-shown)) .scope{display:flex}
  .tabs{display:flex;border-bottom:1px solid var(--line)}
@@ -464,8 +446,9 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  main{display:block;padding:0 16px 32px}h2{display:none}
  .c2,#t2:checked~.wrap .c1{display:none}#t2:checked~.wrap .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
- td a{display:-webkit-inline-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
- td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
+ td a{display:-webkit-box;max-width:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ td:has(>.cd){position:relative;padding-left:9px}.cd{position:absolute;left:0;top:15px;margin:0}  /* phones: dot sits just before the title */
+ td.t{width:68px;padding:10px 8px 0 4px;font-size:12px}
  td.act{display:none}  /* copy and delete are desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
@@ -500,7 +483,7 @@ FONT_CSS = {"source": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wg
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
+const prefs={font:root.dataset.font,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
@@ -534,12 +517,12 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["font","size","theme","open"];
+const KEYS=["font","theme","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
+const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function apply(p){root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
+function apply(p){root.dataset.font=p.font;root.dataset.theme=p.theme;targets(p.open);
  const u=$("d-fonts").dataset[p.font];if(u&&!$("f-"+p.font)){const l=document.createElement("link");l.id="f-"+p.font;l.rel="stylesheet";l.href=u;document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
@@ -548,12 +531,9 @@ const changed=()=>{apply(form());justSaved=false;status();asking(false)};
 function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
 function close(){asking(false);dlg.close();gear.focus()}
 function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
-function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status();
- const h=document.querySelector(`input[name=hsize][value=${saved.size}]`);if(h)h.checked=true}
+function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status()}
 gear.addEventListener("click",()=>{setForm(saved);apply(saved);justSaved=false;status();asking(false);dlg.showModal()});
 dlg.addEventListener("change",changed);
-// header text size: one tap applies and saves at once (no window, nothing to confirm)
-document.querySelectorAll("input[name=hsize]").forEach(r=>r.addEventListener("change",()=>{prefs.size=saved.size=r.value;root.dataset.size=r.value;store()}));
 $("m-reset").addEventListener("click",()=>{setForm(JSON.parse(dlg.dataset.defaults));changed()});
 dlg.addEventListener("cancel",e=>{e.preventDefault();tryClose()});
 dlg.addEventListener("click",e=>{if(e.target===dlg)tryClose()});
@@ -605,7 +585,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=f-{prefs["font"]} rel=stylesheet href="{FONT_CSS[prefs["font"]]}">' if prefs["font"] in FONT_CSS else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-theme="{prefs["theme"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -650,13 +630,6 @@ def sort_items(items, sort):
     return items
 
 
-def size_picker(name, current):
-    """Text size as three dots of growing size on a track, small A to large A (Flickr-style). Header and settings window."""
-    return (f'<div class="sizeseg" role=radiogroup aria-label="Text size"><span class="sa" aria-hidden=true>A</span><span class="track">' + "".join(
-        f'<label title="{v} text"><input type=radio name={name} value={k} aria-label="{v} text"{" checked" if current == k else ""}>'
-        f'<span class="dot d-{k}" aria-hidden=true></span></label>' for k, v in SIZES.items()) + '</span><span class="sb" aria-hidden=true>A</span></div>')
-
-
 def settings_dialog(prefs):
     def seg(name, options):
         return "".join(
@@ -679,7 +652,6 @@ def settings_dialog(prefs):
         '<div class="m-body grid">'
         f'<fieldset><legend>Theme</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
-        f'<fieldset><legend>Text size</legend>{size_picker("size", prefs["size"])}</fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '</div>'
@@ -726,7 +698,6 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
         f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
-        f'<div class="hsize">{size_picker("hsize", prefs["size"])}</div>'
         f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header></div>'
         f'<div class="bar"><div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<span id=st aria-live=polite></span></div></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'

@@ -38,7 +38,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Rows
 
-- Each row: stamp, description with a small superscript dot when the gist has comments (hover it for the count), then two buttons that float over the end of the row on hover, so titles keep the full width (always shown on touch screens 768px and wider; hidden under 768px, so phones only read and open):
+- Each row: stamp, description with a small superscript dot when the gist has comments (hover it for the count; on phones the dot sits just before the title), then two buttons that float over the end of the row on hover, so titles keep the full width (always shown on touch screens 768px and wider; hidden under 768px, so phones only read and open):
   - **Copy link** (2.5× as wide as Delete, so the safe action is the easy one to hit): copies the GitHub URL; the icon turns into a tick and "Link copied" shows.
   - **Delete**: the row turns red and asks, in place, "Delete for good? **Yes** / **No**". No is focused; Esc or clicking elsewhere also means No. Yes deletes it from GitHub for good and removes the row.
 - Delete only works from this page: the server requires a matching `Origin`, a same-origin fetch and a per-run secret token, so other websites and stray tools cannot trigger it.
@@ -51,7 +51,8 @@ The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark s
 |---|---|---|
 | Theme | System · Light · Dark | System |
 | Font | Arial · Source Sans 3 · Helvetica · IBM Plex Sans (the Finviz font) | Arial |
-| Text size | Flickr-style: three dots of growing size between a small and a large A (also in the header, where one tap applies and saves) | Medium |
+
+Text is 12px in every font, the same as Finviz's news rows (14px on phones). Corners follow Finviz: 6px on controls and tables, 4px on small items.
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).

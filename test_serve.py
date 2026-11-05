@@ -38,17 +38,18 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"palette": "cover", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs(None) == {"palette": "cover", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
 assert serve.read_prefs("lg=palette%3Dsage")["palette"] == "sage" and serve.read_prefs("lg=palette%3Devil")["palette"] == "cover"
 assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
-    {"palette": "cover", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
+    {"palette": "cover", "art": "image", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
+page = serve.index_page(1, False, "updated", {"palette": "sage", "art": "strip", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
+assert 'data-art="strip"' in page and 'name=art value=strip checked' in page and '<span class="strip"' in page
 assert 'data-palette="sage"' in page and '/static/masthead-sage.webp' in page and 'name=palette value=sage checked' in page
 assert page.count('class="pcard"') == 4
 assert 'data-size="l" data-theme="dark"' in page

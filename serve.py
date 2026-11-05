@@ -232,8 +232,9 @@ PALETTES = {
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
 }
-DEFAULT_PREFS = {"palette": "cover", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("palette", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
+ARTS = {"image": "Watercolour", "strip": "Colour strip only"}  # first one is the default
+DEFAULT_PREFS = {"palette": "cover", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("palette", "art", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -250,6 +251,8 @@ def read_prefs(cookie_header):
             p["size"] = z
         if (pl := q.get("palette", [""])[0]) in PALETTES:
             p["palette"] = pl
+        if (ar := q.get("art", [""])[0]) in ARTS:
+            p["art"] = ar
         if (th := q.get("theme", [""])[0]) in THEMES:
             p["theme"] = th
         if (o := q.get("open", [""])[0]) in OPENS:
@@ -318,6 +321,8 @@ CSS = """
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
 :root[data-theme=dark]{DARK}
+html{--w1:#7c95b8;--w2:#c8a874;--w3:#e9e2d0}
+html[data-palette=cover]{--w1:#3f63a8;--w2:#d4683f;--w3:#efe2c6}html[data-palette=sage]{--w1:#8fa682;--w2:#c9a95e;--w3:#e6e8dd}html[data-palette=night]{--w1:#3e5578;--w2:#8a7350;--w3:#3a3d44}
 html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c;--credit-bg:rgb(247 241 227 / .85)}
 html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741;--credit-bg:rgb(243 244 238 / .85)}
 html[data-palette=night]{DARK;--accent:#d3ad7a}
@@ -423,6 +428,11 @@ input[name=t]{position:absolute;opacity:0;pointer-events:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
 h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-bottom:1px solid var(--line);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
 .masthead{position:relative;margin:0;border-bottom:1px solid var(--line)}
+.strip{display:none;height:8px}.strip i{flex:1}
+.strip i:nth-child(1){background:var(--w1)}.strip i:nth-child(2){background:var(--w2)}.strip i:nth-child(3){background:var(--w3)}
+html[data-art=strip] .masthead img,html[data-art=strip] .credit,html[data-art=strip] .colophon img,html[data-art=strip] .art-empty img{display:none}
+html[data-art=strip] .strip{display:flex}html[data-art=strip] .masthead{border-bottom:0}
+html[data-art=strip] .colophon{display:none}
 .masthead img{display:block;width:100%;height:110px;object-fit:cover;object-position:50% 42%}  /* art stays a garnish: never taller than 110px */
 .credit{position:absolute;right:10px;bottom:6px;margin:0;padding:1px 7px;font:italic 10.5px/1.4 var(--serif);color:var(--muted);background:var(--credit-bg);border-radius:2px}
 .nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:14px 24px 12px;border-bottom:3px double var(--rule)}
@@ -570,7 +580,7 @@ JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={palette:root.dataset.palette,font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
+const prefs={palette:root.dataset.palette,art:root.dataset.art,font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
@@ -610,12 +620,12 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["palette","font","size","theme","open"];
+const KEYS=["palette","art","font","size","theme","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
+const form=()=>({palette:pick("palette"),art:pick("art"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function apply(p){root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
+function apply(p){root.dataset.art=p.art;root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
  if(root.dataset.palette!==p.palette){root.dataset.palette=p.palette;document.querySelectorAll("img[data-art]").forEach(i=>i.src=`/static/${i.dataset.art}-${p.palette}.webp`)}
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
@@ -719,7 +729,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-art="{prefs["art"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -809,6 +819,8 @@ def settings_dialog(prefs):
         f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
         '<div class="m-body grid">'
         f'<fieldset class="wide"><legend>Colour theme</legend>{palette_cards(prefs["palette"])}</fieldset>'
+        f'<fieldset><legend>Header art</legend><div class="seg">{seg("art", ARTS)}</div>'
+        '<p class="hint">Colour strip only shows a thin band of the theme colours, no pictures.</p></fieldset>'
         f'<fieldset><legend>Light or dark</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
         f'<fieldset><legend>Text size</legend>{size_picker("size", prefs["size"])}</fieldset>'
@@ -922,6 +934,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
         f'<figure class="masthead"><img class="art" data-art=masthead src="/static/masthead-{prefs["palette"]}.webp" width=2080 height=375 alt="">'
+        '<span class="strip" aria-hidden=true><i></i><i></i><i></i></span>'
         '<figcaption class="credit">The Reading Room, Library of Congress, 1901. Watercolour after a Detroit Publishing Co. photochrom.</figcaption></figure>'
         f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'

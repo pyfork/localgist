@@ -228,6 +228,8 @@ THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is 
 # Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the three-colour strip shown at the top.
 PALETTES = {
     "finviz": {"name": "Finviz", "note": "White, light or dark", "paper": "#ffffff", "ink": "#1e222d", "accent": "#2f6bd1", "link": "#1d4ea8", "rule": "#e7e9ee", "muted": "#6b7280", "wash": ("#2f6bd1", "#8fa3c2", "#e7ebf2")},
+    "ft": {"name": "FT salmon", "note": "Financial Times feel", "paper": "#fff1e5", "ink": "#33302e", "accent": "#0d7680", "link": "#0f5499", "rule": "#f0dcc9", "muted": "#66605c", "wash": ("#990f3d", "#0d7680", "#f2dfce")},
+    "economist": {"name": "Economist red", "note": "The Economist feel", "paper": "#ffffff", "ink": "#0d0d0d", "accent": "#e3120b", "link": "#1f2e7a", "rule": "#e5e5e5", "muted": "#595959", "wash": ("#e3120b", "#1f2e7a", "#d6d6d6")},
     "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
     "newsprint": {"name": "Newsprint", "note": "NYT-like", "paper": "#fbf8f1", "ink": "#1d1b16", "accent": "#2f4b73", "link": "#1f3a5f", "rule": "#e6dfd0", "muted": "#6a6356", "wash": ("#7c95b8", "#c8a874", "#e9e2d0")},
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
@@ -324,6 +326,10 @@ html[data-palette=cover]{--w1:#3f63a8;--w2:#d4683f;--w3:#efe2c6}html[data-palett
 html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c}
 html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741}
 html[data-palette=night]{DARK;--accent:#d3ad7a}
+html[data-palette=ft]{--page:#f2e5da;--surface:#fff1e5;--fg:#33302e;--muted:#66605c;--faint:#8f8780;--line:#f0dcc9;--rule:#33302e;--link:#0f5499;--seen:#593380;--hover:#f8e6d6;--field:#fbe8d8;--field-line:#e3cdb9;--kbd:#fff1e5;--accent:#0d7680;--w1:#990f3d;--w2:#0d7680;--w3:#f2dfce}
+html[data-palette=economist]{--page:#f2f2f2;--surface:#ffffff;--fg:#0d0d0d;--muted:#595959;--faint:#8c8c8c;--line:#e5e5e5;--rule:#0d0d0d;--link:#1f2e7a;--seen:#5a2d82;--hover:#f7f7f7;--field:#f5f5f5;--field-line:#d4d4d4;--kbd:#ffffff;--accent:#e3120b;--w1:#e3120b;--w2:#1f2e7a;--w3:#d6d6d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=ft]{--accent:#45b3bd;--w1:#c2185b;--w2:#45b3bd;--w3:#3a3d44}:root:not([data-theme=light])[data-palette=economist]{--accent:#ff6b62;--w1:#ff6b62;--w2:#6f7fd6;--w3:#3a3d44}}
+:root[data-theme=dark][data-palette=ft]{--accent:#45b3bd;--w1:#c2185b;--w2:#45b3bd;--w3:#3a3d44}:root[data-theme=dark][data-palette=economist]{--accent:#ff6b62;--w1:#ff6b62;--w2:#6f7fd6;--w3:#3a3d44}
 html[data-palette=finviz]{--page:#f3f4f6;--surface:#ffffff;--fg:#1e222d;--muted:#6b7280;--faint:#9aa0ab;--line:#e7e9ee;--rule:#1e222d;--link:#1d4ea8;--seen:#6b3fa0;--hover:#f3f6fb;--field:#f5f6f8;--field-line:#d7dbe1;--kbd:#ffffff;--accent:#2f6bd1;--w1:#2f6bd1;--w2:#8fa3c2;--w3:#e7ebf2}
 html[data-palette=finviz] .nameplate h1,html[data-palette=finviz] h2{font-family:var(--ff);letter-spacing:-.01em}  /* Finviz is all sans */
 @media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}}
@@ -379,7 +385,7 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .m-body.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 48px;padding:34px 40px 36px}
 .m-body.grid .seg{max-width:420px;margin:0 auto}
 .m-body.grid fieldset.wide{grid-column:1/-1}
-.pcards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.pcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .pcard{position:relative;cursor:pointer;text-align:left}
 .pcard input{position:absolute;opacity:0;pointer-events:none}
 .pv{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--field-line);transition:border-color .12s,transform .12s}

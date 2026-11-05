@@ -51,7 +51,8 @@ serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.g
 page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
 assert '<div class="strip"' in page and "<img" not in page and "/static/" not in page
 assert 'data-palette="sage"' in page and 'name=palette value=sage checked' in page
-assert page.count('class="pcard"') == len(serve.PALETTES) == 5
+assert page.count('class="pcard"') == len(serve.PALETTES) == 7
+assert serve.read_prefs("lg=palette%3Dft")["palette"] == "ft" and serve.read_prefs("lg=palette%3Deconomist")["palette"] == "economist"
 assert 'data-size="l" data-theme="dark"' in page
 assert 'name=hsize value=l aria-label="Large text" checked' in page and 'name=size value=l aria-label="Large text" checked' in page
 assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page

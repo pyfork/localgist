@@ -79,7 +79,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 
 ## Editorial theme (branch `feat/watercolor-theme`)
 
-- **Colour themes** in the settings window, shown as mini page previews: **Finviz** (default; white in light mode, charcoal in dark mode), Cover Ink, Newsprint, Sage Ledger, Night Edition.
+- **Colour themes** in the settings window, shown as mini page previews: **Finviz** (default; white in light mode, charcoal in dark mode), FT salmon, Economist red, Cover Ink, Newsprint, Sage Ledger, Night Edition.
 - A thin three-colour strip of the theme runs along the top. No images.
 - Serif nameplate and dateline, section rules, and a **Gists written, by month** chart: hover a bar for its count, click it to list that month, drag the two handles to resize the period or the middle to move it, ✕ to reset.
 

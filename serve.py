@@ -221,7 +221,7 @@ def search(q, scopes):
 
 # ---------- display preferences (one cookie, read by the server so pages render with no flash) ----------
 
-FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"}  # first one is the default
+FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica", "plex": "IBM Plex Sans"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
 SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is the default
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
@@ -269,7 +269,7 @@ def stamp(iso, now=None):
     """Finviz style, Malaysia time: '08:54AM' if today, else '04-Nov'."""
     dt = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(MYT)
     now = now or datetime.now(MYT)
-    return f"{dt:%I:%M%p}" if dt.date() == now.date() else f"{dt:%d-%b}"
+    return f"{dt:%I:%M%p}" if dt.date() == now.date() else f"{dt:%b-%d}"
 
 
 def columns(items, page):
@@ -339,15 +339,16 @@ html[data-palette=finviz] .nameplate h1,html[data-palette=finviz] h2{font-family
 html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px;--serif:Georgia,"Iowan Old Style","Times New Roman",serif}
 html[data-font=helvetica]{--ff:Helvetica,"Helvetica Neue",Arial,sans-serif}
 html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif;--fs:13.5px}
+html[data-font=plex]{--ff:"IBM Plex Sans",Arial,sans-serif;--fw:420}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{background:var(--page)}
+html{background:var(--surface)}
 html{--scale:1}html[data-size=s]{--scale:.9}html[data-size=l]{--scale:1.15}
-body{margin:0;background:var(--page);color:var(--fg);font:calc(var(--fs) * var(--scale))/1.45 var(--ff);-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--surface);color:var(--fg);font:var(--fw,400) calc(var(--fs) * var(--scale))/1.45 var(--ff);-webkit-font-smoothing:antialiased}
 button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
-.wrap{width:min(1040px,100% - 64px);min-height:100vh;margin:0 auto;background:var(--surface);border-inline:1px solid var(--line);overflow:clip}  /* square, runs top to bottom like Finviz */
+.wrap{width:min(1440px,100%);min-height:100vh;margin:0 auto;background:var(--surface);overflow:clip}  /* Finviz: list runs the full band, no card */
 .top{background:var(--surface)}
 /* Finviz layout: the header runs the full window width; only the list below sits in the centred column */
 .bar{border-bottom:1px solid var(--line)}
@@ -425,7 +426,7 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .seg label:hover span{color:var(--fg)}
 .seg label:has(input:checked) span{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .seg label:has(input:focus-visible) span{outline:2px solid var(--focus)}
-.f-arial{font-family:Arial,sans-serif}.f-source{font-family:"Source Sans 3",Arial,sans-serif}.f-helvetica{font-family:Helvetica,Arial,sans-serif}
+.f-arial{font-family:Arial,sans-serif}.f-source{font-family:"Source Sans 3",Arial,sans-serif}.f-helvetica{font-family:Helvetica,Arial,sans-serif}.f-plex{font-family:"IBM Plex Sans",Arial,sans-serif}
 .hint{margin:8px 0 0;color:var(--faint);font-size:11.5px}
 .scope{display:flex;align-items:center;gap:8px;padding:8px 24px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:999px;cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
@@ -437,8 +438,8 @@ dialog.modal[open]{animation:pop .16s ease-out}
 #st{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
 input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
-main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
-h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-bottom:1px solid var(--line);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
+main{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:12px 20px 28px}
+h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
 .strip{display:flex;height:8px}.strip i{flex:1}
 .strip i:nth-child(1){background:var(--w1)}.strip i:nth-child(2){background:var(--w2)}.strip i:nth-child(3){background:var(--w3)}
 .nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:14px 24px 12px;border-bottom:3px double var(--rule)}
@@ -472,12 +473,15 @@ h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-b
 .chart line{stroke:var(--rule);stroke-width:1}
 header .brand{display:none}
 .empty.quiet{padding:28px 0 8px;text-align:center;font:italic 16px/1.4 var(--serif)}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
+table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+tr:last-child td{border-bottom:0}
 tr:hover td{background:var(--hover)}
-td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
-td.t{width:calc(68px * var(--scale));padding:4px 8px 0 4px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:calc(11.5px * var(--scale))}
+td{height:27px;padding:4px 4px 3px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+td.t{width:calc(68px * var(--scale));padding:5px 8px 0 4px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:calc(11.5px * var(--scale))}
 .empty{color:var(--muted);padding:14px 0;margin:0}
-td.act{width:96px;padding:1px 2px 0 0;text-align:right;overflow:visible;white-space:nowrap}
+td.act{width:0;padding:0;overflow:visible;white-space:nowrap}
+.acts{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 2px 0 18px;background:linear-gradient(90deg,transparent,var(--hover) 16px);opacity:0}
+tr:hover .acts,tr:focus-within .acts{opacity:1}
 td.cm{width:34px;padding:4px 0 0 6px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
 td.cm span{display:inline-flex;align-items:center;gap:2px}td.cm .hi{width:13px;height:13px}
 .ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:6px;background:none;color:var(--faint);cursor:pointer;opacity:0}
@@ -486,7 +490,7 @@ td.cm span{display:inline-flex;align-items:center;gap:2px}td.cm .hi{width:13px;h
 tr:hover .ib,tr:focus-within .ib,.ib:focus-visible{opacity:1}
 .ib:hover{background:var(--surface);color:var(--fg)}.ib.del:hover{color:#c62828}
 .ib.done{opacity:1;color:#1f8a4c}
-@media (hover:none){.ib{opacity:.7}}
+@media (hover:none){.ib{opacity:.7}.acts{opacity:1}}
 td.act{position:relative}
 tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc{position:absolute;right:0;top:0;bottom:0;z-index:1;display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;white-space:nowrap;
@@ -573,7 +577,8 @@ TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.1
 CHAT = hero('<path d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/>')  # chat-bubble-left
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
-SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap"
+FONT_CSS = {"source": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap",
+            "plex": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400..700&display=swap"}  # Plex is what Finviz uses
 
 # One script for the list page, pinned in the CSP by its hash.
 # Search: Cmd/Ctrl+F focuses it (again inside the box: the browser's own find). Description and
@@ -627,7 +632,7 @@ const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
 const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
 function apply(p){root.dataset.palette=p.palette;root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
- if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
+ const u=$("d-fonts").dataset[p.font];if(u&&!$("f-"+p.font)){const l=document.createElement("link");l.id="f-"+p.font;l.rel="stylesheet";l.href=u;document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
 function setForm(p){for(const k of KEYS)dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true}
@@ -736,7 +741,7 @@ CSP = (
 
 
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
-    font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
+    font_link = f'<link id=f-{prefs["font"]} rel=stylesheet href="{FONT_CSS[prefs["font"]]}">' if prefs["font"] in FONT_CSS else ""
     return (
         f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
@@ -754,8 +759,8 @@ def comments(g):
 
 def actions(g):
     url, t = html.escape(gist_url(g)), html.escape(title(g))
-    return (f'<button class="ib copy" type=button data-u="{url}" aria-label="Copy link to {t}" title="Copy link">{COPY}<span aria-hidden=true>Copy</span></button>'
-            f'<button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button>')
+    return (f'<span class="acts"><button class="ib copy" type=button data-u="{url}" aria-label="Copy link to {t}" title="Copy link">{COPY}<span aria-hidden=true>Copy</span></button>'
+            f'<button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button></span>')
 
 
 def rows(items, field="updated_at", open_in="same"):
@@ -816,6 +821,7 @@ def settings_dialog(prefs):
             for k, v in options.items()
         )
     return (
+        f'<template id=d-fonts {" ".join(f'data-{k}="{html.escape(u)}"' for k, u in FONT_CSS.items())}></template>'
         f'<template id=ok-icon>{CHECK}</template><template id=chat-icon>{CHAT}</template>'
         f'<template id=act-tpl>{actions({"id": "", "html_url": "", "description": "", "files": {}})}</template>'
         '<template id=confirm-tpl><div class="rc" role=group aria-label="Confirm delete">'

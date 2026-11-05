@@ -9,10 +9,10 @@ from datetime import datetime
 
 import serve
 
-# dates, Finviz style in Malaysia time: '08:54AM' today, '04-Nov' before
+# dates, Finviz style in Malaysia time: '08:54AM' today, 'Nov-04' before
 now = datetime(2026, 11, 5, 15, 0, tzinfo=serve.MYT)
 assert serve.stamp("2026-11-05T00:54:00Z", now) == "08:54AM"
-assert serve.stamp("2026-11-04T06:05:00Z", now) == "04-Nov"
+assert serve.stamp("2026-11-04T06:05:00Z", now) == "Nov-04"
 assert serve.stamp("2026-11-04T17:30:00Z", now) == "01:30AM"  # UTC evening of the 4th is today in MYT
 
 # columns

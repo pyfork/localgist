@@ -20,11 +20,11 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Layout
 
-- Desktop: a centered card at most 1040px wide, with at least 32px of page showing on each side (never full width), two columns of 90 rows, then page 2.
+- Desktop: Finviz-sized. The list runs the full width (up to 1440px) in two boxed tables (1px border, 6px corners, 27px rows) of 90 rows each, then page 2.
 - Under 768px: full width, one column, sticky search and tabs, rows at least 48px tall.
 - Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
 - Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
-- Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `04-Nov`, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
+- Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `Nov-04`, right-aligned, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
 - While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 
@@ -38,7 +38,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Rows
 
-- Each row: stamp, description, comment count (when the gist has comments), then two buttons that appear on hover (always shown on touch screens 768px and wider; hidden under 768px, so phones only read and open):
+- Each row: stamp, description, comment count (when the gist has comments), then two buttons that float over the end of the row on hover, so titles keep the full width (always shown on touch screens 768px and wider; hidden under 768px, so phones only read and open):
   - **Copy link** (2.5× as wide as Delete, so the safe action is the easy one to hit): copies the GitHub URL; the icon turns into a tick and "Link copied" shows.
   - **Delete**: the row turns red and asks, in place, "Delete for good? **Yes** / **No**". No is focused; Esc or clicking elsewhere also means No. Yes deletes it from GitHub for good and removes the row.
 - Delete only works from this page: the server requires a matching `Origin`, a same-origin fetch and a per-run secret token, so other websites and stray tools cannot trigger it.
@@ -50,14 +50,14 @@ The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark s
 | Setting | Options | Default |
 |---|---|---|
 | Theme | System · Light · Dark | System |
-| Font | Arial · Source Sans 3 · Helvetica | Arial |
+| Font | Arial · Source Sans 3 · Helvetica · IBM Plex Sans (the Finviz font) | Arial |
 | Text size | Flickr-style: three dots of growing size between a small and a large A (also in the header, where one tap applies and saves) | Medium |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).
 - **Esc** closes once saved. With unsaved changes, Esc or ✕ asks: **Keep editing** or **Exit anyway** (which undoes the preview).
 - Saved settings and the Search-in ticks live in one cookie on this browser for a year. The server reads it on every page load, so they survive `pydown` / `pyup`, restarts and port changes. They do not follow you to another browser or a private window.
-- Source Sans 3 is loaded from Google Fonts, only while it is picked.
+- Source Sans 3 and IBM Plex Sans are loaded from Google Fonts, only while picked.
 - Icons are Heroicons only.
 
 ## Resources

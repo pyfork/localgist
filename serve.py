@@ -224,6 +224,7 @@ def search(q, scopes):
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica", "plex": "IBM Plex Sans"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
+TOPS = {"on": "Show", "off": "Hide"}  # back-to-top button; first one is the default
 MASTS = {"on": "Masthead", "off": "Minimal"}  # first one is the default; Minimal hides the strip, nameplate and chart
 # Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the three-colour strip shown at the top.
 PALETTES = {
@@ -235,8 +236,8 @@ PALETTES = {
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
 }
-DEFAULT_PREFS = {"palette": "finviz", "font": "arial", "theme": "system", "mast": "on", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("palette", "font", "theme", "mast", "open")  # what the settings window edits and Reset restores
+DEFAULT_PREFS = {"palette": "finviz", "font": "arial", "theme": "system", "mast": "on", "top": "on", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("palette", "font", "theme", "mast", "top", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -255,6 +256,8 @@ def read_prefs(cookie_header):
             p["theme"] = th
         if (m := q.get("mast", [""])[0]) in MASTS:
             p["mast"] = m
+        if (t := q.get("top", [""])[0]) in TOPS:
+            p["top"] = t
         if (o := q.get("open", [""])[0]) in OPENS:
             p["open"] = o
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
@@ -406,7 +409,7 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .plabel{display:block;padding:7px 9px 8px;font-size:12.5px;font-weight:600;color:var(--fg);background:rgb(0 0 0 / .2)}
 .plabel small{display:block;font-weight:400;font-size:11px;color:var(--muted)}.m-body .seg span{height:38px;font-size:14px}
 .m-body legend{padding:0;margin:0 auto 14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.m-foot{padding:14px 20px 14px 32px;border-top:1px solid var(--line);background:rgb(0 0 0 / .18)}
+.m-foot{position:sticky;bottom:0;padding:14px 20px 14px 32px;border-top:1px solid var(--line);background:#1a1b1e}  /* Save stays in view on short screens */
 .m-row{display:flex;align-items:center;gap:8px}
 .m-msg{margin-right:auto;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
 .m-msg.ok{color:#1f8a4c}.m-msg.dirty{color:var(--fg);font-weight:600}
@@ -505,6 +508,8 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
 .m-body .m-body .m-body .btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
+.totop{position:fixed;right:24px;bottom:24px;z-index:4;width:40px;height:40px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:var(--r);background:var(--surface);color:var(--muted);box-shadow:var(--shadow);cursor:pointer}
+.totop:hover{color:var(--fg);border-color:var(--fg)}.totop .hi{width:20px;height:20px}html[data-top=off] .totop{display:none}
 .note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:var(--r);background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
 .toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:var(--r);background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#3ccf7a}
@@ -542,6 +547,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  td.t{width:68px;padding:10px 8px 0 4px;font-size:12px}
  td.act{display:none}  /* copy and delete are desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
+ .totop{right:16px;bottom:16px;width:44px;height:44px}
 }
 """
 
@@ -564,6 +570,7 @@ REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992
 COPY = hero('<path d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z"/>')  # clipboard-document
 TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
+CHEVRON_UP = hero('<path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>')  # chevron-up
 CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
 FONT_CSS = {"source": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap",
             "plex": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400..700&display=swap"}  # Plex is what Finviz uses
@@ -575,7 +582,7 @@ JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={palette:root.dataset.palette,font:root.dataset.font,theme:root.dataset.theme,mast:root.dataset.mast,open:root.dataset.open,in:root.dataset.in};
+const prefs={palette:root.dataset.palette,font:root.dataset.font,theme:root.dataset.theme,mast:root.dataset.mast,top:root.dataset.top,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
@@ -613,12 +620,12 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["palette","font","theme","mast","open"];
+const KEYS=["palette","font","theme","mast","top","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),mast:pick("mast"),open:pick("open")});
+const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),mast:pick("mast"),top:pick("top"),open:pick("open")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function apply(p){root.dataset.palette=p.palette;root.dataset.mast=p.mast;root.dataset.font=p.font;root.dataset.theme=p.theme;targets(p.open);
+function apply(p){root.dataset.palette=p.palette;root.dataset.mast=p.mast;root.dataset.top=p.top;root.dataset.font=p.font;root.dataset.theme=p.theme;targets(p.open);
  const u=$("d-fonts").dataset[p.font];if(u&&!$("f-"+p.font)){const l=document.createElement("link");l.id="f-"+p.font;l.rel="stylesheet";l.href=u;document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
@@ -715,7 +722,10 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
 let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
 setInterval(check,60000);document.addEventListener("visibilitychange",check);
-u.addEventListener("click",()=>location.reload())})();"""
+u.addEventListener("click",()=>location.reload());
+// back to top: shows once the first screen has scrolled away
+const tt=$("totop");addEventListener("scroll",()=>{tt.hidden=scrollY<innerHeight},{passive:true});
+tt.addEventListener("click",()=>{scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});const f=document.querySelector("main a");if(f)f.focus({preventScroll:true})})})();  // focus moves to the first gist, not the search box (no phone keyboard)"""
 JS_HASH = "sha256-" + base64.b64encode(hashlib.sha256(JS.encode()).digest()).decode()
 CSP = (
     f"default-src 'none'; script-src '{JS_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; "
@@ -727,7 +737,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=f-{prefs["font"]} rel=stylesheet href="{FONT_CSS[prefs["font"]]}">' if prefs["font"] in FONT_CSS else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-mast="{prefs["mast"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-mast="{prefs["mast"]}" data-top="{prefs["top"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -806,6 +816,7 @@ def settings_dialog(prefs):
         '<span class="rc-q">Delete for good?</span>'
         '<button class="rc-yes" type=button>Yes</button><button class="rc-no" type=button>No</button></div></template>'
         '<div id=note class="note" role=status aria-live=polite hidden></div>'
+        f'<button id=totop class="totop" type=button aria-label="Back to top" title="Back to top" hidden>{CHEVRON_UP}</button>'
         '<dialog id=settings class="modal" aria-labelledby=m-title'
         f' data-defaults="{html.escape(json.dumps({k: DEFAULT_PREFS[k] for k in DISPLAY_KEYS}))}">'
         f'<div class="m-head"><div id=m-title class="m-title">Display settings</div>'
@@ -816,6 +827,7 @@ def settings_dialog(prefs):
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
         f'<fieldset class="m-mast"><legend>Layout</legend><div class="seg">{seg("mast", MASTS)}</div>'
         '<p class="hint">Minimal hides the masthead and chart.</p></fieldset>'
+        f'<fieldset><legend>Back to top button</legend><div class="seg">{seg("top", TOPS)}</div></fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '</div>'

@@ -56,6 +56,7 @@ The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark s
 
 Text is 12px in every font, the same as Finviz's news rows (14px on phones). Corners follow Finviz: 6px on controls and tables, 4px on small items.
 | Layout (1024px and wider: desktops, landscape tablets) | Masthead · Minimal (hides the colour strip, nameplate and chart) | Masthead |
+| Back to top button | Show · Hide (bottom right, appears after the first screen) | Show |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).

@@ -1,0 +1,6 @@
+# public repo: ignore everything, then let in only the code files (test_serve.py checks the same list)
+*
+!.gitignore
+!README.md
+!serve.py
+!test_serve.py

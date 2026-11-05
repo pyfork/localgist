@@ -38,7 +38,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Display settings
 
-The gear button (top right) opens a centered settings window:
+The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a centered settings window:
 
 | Setting | Options | Default |
 |---|---|---|

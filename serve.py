@@ -462,10 +462,12 @@ dlg.addEventListener("change",()=>{apply(form());justSaved=false;status();asking
 dlg.addEventListener("cancel",e=>{e.preventDefault();tryClose()});
 dlg.addEventListener("click",e=>{if(e.target===dlg)tryClose()});
 dlg.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();if(dirty())save()}});
+// Cmd/Ctrl+K opens the settings window from anywhere; pressed again it closes it (asking first if unsaved)
+document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();if(dlg.open)tryClose();else gear.click()}});
 $("m-close").addEventListener("click",tryClose);btn.addEventListener("click",save);
 $("m-keep").addEventListener("click",()=>asking(false));
 $("m-discard").addEventListener("click",()=>{setForm(saved);apply(saved);close()});
-if(!/Mac|iPhone|iPad/.test(navigator.platform))$("k").textContent="Ctrl F";
+if(!/Mac|iPhone|iPad/.test(navigator.platform)){$("k").textContent="Ctrl F";gear.title="Display settings (Ctrl K)"}
 {const p=new URLSearchParams(location.search).get("q");if(p){q.value=p;run()}else if(q.value)run()}
 const V=$("d").dataset.v,u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
@@ -572,7 +574,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
         f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
-        f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" title="Display settings">{GEAR}</button></header>'
+        f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header>'
         f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<span id=st aria-live=polite></span></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
         f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'

@@ -295,12 +295,12 @@ def search_data(items, field="updated_at"):
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
 
 
-DARK = ("color-scheme:dark;--page:#0b0d10;--surface:#14171c;--fg:#e8eaef;--muted:#a0a7b4;--faint:#6f7683;--line:#242830;--rule:#e8eaef;"
+DARK = ("color-scheme:dark;--page:#0b0d10;--surface:#14171c;--band:#1c2027;--fg:#e8eaef;--muted:#a0a7b4;--faint:#6f7683;--line:#242830;--rule:#e8eaef;"
         "--link:#a9c4f6;--seen:#c7adf2;--hover:#1b2028;--field:#0f1216;--field-line:#2c313a;--focus:#6b96ff;--kbd:#1d2129;"
         "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
-:root{color-scheme:light;--r:6px;--rs:4px;  /* Finviz: 6px controls and tables, 4px small items */
+:root{color-scheme:light;--r:6px;--rs:4px;--band:#eceef2;  /* Finviz: 6px controls and tables, 4px small items */
  --page:#eef0f3;--surface:#fff;--fg:#16181d;--muted:#5f6673;--faint:#8a919d;--line:#e7e9ed;--rule:#16181d;
  --link:#173a7a;--seen:#5b3f8c;--hover:#f3f6fb;--field:#f6f7f9;--field-line:#d9dce2;--focus:#2f6feb;--kbd:#fff;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
@@ -318,7 +318,7 @@ button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--rs)}
 .wrap{width:min(1440px,100%);min-height:100vh;margin:0 auto;background:var(--surface);overflow:clip}  /* Finviz: list runs the full band, no card */
-.top{background:var(--surface)}
+.top{background:var(--band)}.top .search input{background:var(--surface)}  /* Finviz: the header band has its own tint; the search box stays white */
 /* Finviz layout: the header runs the full window width; only the list below sits in the centred column */
 .bar{border-bottom:1px solid var(--line)}
 .bar>header,.bar>.scope{max-width:1440px;margin:0 auto;border-bottom:0}
@@ -434,6 +434,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .meta{gap:8px}
  kbd{display:none}
  .m-row.ask{flex-wrap:wrap}
+ .seg:has(input[name=font]){flex-wrap:wrap}.seg:has(input[name=font]) label{flex:1 1 45%}  /* four fonts: 2 x 2 on phones */
  dialog.modal{width:calc(100% - 24px);min-width:0}.m-body.grid{grid-template-columns:1fr;gap:26px;padding:24px 18px}
  .m-head{padding:14px 12px 12px 18px}.m-foot{padding:12px 14px 12px 18px}
  .ask .m-msg{flex-basis:100%;margin-bottom:4px}

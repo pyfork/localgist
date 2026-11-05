@@ -49,6 +49,7 @@ assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
 page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "theme": "dark", "mast": "off", "top": "off", "open": "new", "in": "desc,content"})
+assert '{reload}' not in page and page.count('class="refresh"') == 2  # beside the title and beside the toolbar name
 assert 'data-top="off"' in page and 'name=top value=off checked' in page and 'id=totop' in page
 assert serve.read_prefs("lg=top%3Doff")["top"] == "off" and serve.read_prefs("lg=top%3Devil")["top"] == "on"
 assert 'data-mast="off"' in page and 'name=mast value=off checked' in page

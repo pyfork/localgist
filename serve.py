@@ -479,9 +479,9 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .chart .bar{fill:currentColor;opacity:.5}.chart .pk{opacity:1}
 .chart text{font:10px var(--serif);fill:var(--muted)}.chart .ann{font-style:italic;fill:var(--fg)}
 .chart line{stroke:var(--rule);stroke-width:1}
-header .brand{display:none}
-html[data-mast=off] .strip,html[data-mast=off] .band{display:none}html[data-mast=off] header .brand{display:inline}  /* Minimal layout */
-@media (max-width:1023px){.strip,.band,.m-mast{display:none}header .brand{display:inline}}  /* phones and portrait tablets: never a masthead, so no Layout choice */
+header .brandrow{display:none}.brandrow{align-items:center;gap:8px}.np-row{display:flex;align-items:center;gap:10px}.np-row .refresh .hi{width:20px;height:20px}  /* refresh sits right of the title */
+html[data-mast=off] .strip,html[data-mast=off] .band{display:none}html[data-mast=off] header .brandrow{display:inline-flex}  /* Minimal layout */
+@media (max-width:1023px){.strip,.band,.m-mast{display:none}header .brandrow{display:inline-flex}}  /* phones and portrait tablets: never a masthead, so no Layout choice */
 .empty.quiet{padding:28px 0 8px;text-align:center;font:italic 16px/1.4 var(--serif)}
 table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 tr:last-child td{border-bottom:0}
@@ -548,6 +548,7 @@ tr.confirming .acts{opacity:1}tr.confirming td{background:color-mix(in srgb,#c62
  td.t{width:68px;padding:0;font-size:12px}.stamp{display:flex;justify-content:flex-end;align-items:flex-start;width:100%;min-height:48px;padding:10px 8px 0 4px}  /* whole cell is the tap target */
  td.act{display:none}  /* delete is desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
+ .brandrow .refresh{display:grid;place-items:center;padding:14px 22px 14px 6px;margin:-14px -22px -14px -6px}  /* 44px tap area, same layout */
  .totop{right:16px;bottom:16px;width:48px;height:48px}.totop .hi{width:24px;height:24px}  /* 48px: Apple and Google tap minimums */
 }
 """
@@ -567,7 +568,7 @@ GEAR = hero(  # cog-6-tooth
     '<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>'
     '<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>'
 )
-REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>')  # arrow-path
+REFRESH = hero('<path d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3"/>')  # arrow-path-rounded-square
 TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHEVRON_UP = hero('<path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>')  # chevron-up
@@ -931,12 +932,13 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<label class="chip"><input type=checkbox value={k}{" checked" if k in on else ""}>{CHECK}{v}</label>'
         for k, v in SCOPES.items()
     )
+    reload = f'<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a>'
     return shell(
         "localgist",
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
         '<div class="strip" aria-hidden=true><i></i><i></i><i></i></div>'
-        f'<div class="bar band"><div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
+        f'<div class="bar band"><div class="nameplate"><div><div class="np-row"><h1>localgist</h1>{reload}</div><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
         f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
         '<figcaption>Gists written, by month</figcaption>'
@@ -948,12 +950,12 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period" hidden>{XMARK}</button></div>'
         '<p class="chart-hint"><span>Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</span>'
         '<button class="mchip mclear" type=button hidden></button></p></figure></div></div>'
-                '<div class="top"><div class="bar"><header><a class="brand" href="/">localgist</a>'
+                f'<div class="top"><div class="bar"><header><span class="brandrow"><a class="brand" href="/">localgist</a>{reload}</span>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
-        f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
+        f'<nav id=pg aria-label="Pages">{nav}</nav></div>'
         f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header></div>'
         f'<div class="bar"><div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<button id=mchip class="mchip" type=button hidden></button><span id=st aria-live=polite></span></div></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'

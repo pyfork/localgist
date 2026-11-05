@@ -26,6 +26,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
 - Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
 - Row: Finviz-style stamp in Malaysia time, `08:54AM` if today, else `Nov-04`, right-aligned, then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
+- **Reload from GitHub** (Heroicons arrow-path-rounded-square) sits right of the localgist title; with no masthead (Minimal, or under 1024px) it sits next to the small name in the toolbar, with a 44px tap area on phones.
 - While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 - The header band has its own tint, a light grey in light mode and a lighter panel in dark mode, with the list area below it plain, as on Finviz.

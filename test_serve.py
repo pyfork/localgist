@@ -203,6 +203,9 @@ assert set(tracked) <= allowed, tracked
 mc = serve.month_counts([{"created_at": "2026-11-01T00:00:00Z"}, {"created_at": "2026-11-02T00:00:00Z"},
                          {"created_at": "2025-12-31T17:00:00Z"}, {"created_at": "2020-01-01T00:00:00Z"}], now=now)
 assert len(mc) == 24 and mc[-1] == (2026, 11, 2) and (2026, 1, 1) in mc and sum(n for *_, n in mc) == 3  # UTC Dec 31 17:00 is Jan 1 in MYT
+am = serve.all_months([{"created_at": "2026-09-15T00:00:00Z"}, {"created_at": "2026-11-01T00:00:00Z"}], now=now)
+assert am == [["2026-09", 1], ["2026-10", 0], ["2026-11", 1]], am
+assert serve.created_month({"created_at": "2025-12-31T17:00:00Z"}) == "2026-01"
 svg = serve.month_chart([{"created_at": "2026-11-01T00:00:00Z"}, {"created_at": "2026-11-02T00:00:00Z"}], now=now)
 assert "2 in Nov \u201926" in svg and svg.count("<rect") == 24
 

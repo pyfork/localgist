@@ -288,11 +288,11 @@ def gist_url(g):
 
 
 def search_data(items, field="updated_at"):
-    """[id, url, stamp, title, desc, files, comments] per gist (desc and files lowercased),
+    """[id, url, stamp, title, desc, files, comments, created YYYY-MM] per gist (desc and files lowercased),
     safe to embed in a <script> block."""
     rows = [
         [g["id"], gist_url(g), stamp(g[field]), title(g), (g.get("description") or "").lower(), " ".join(g["files"]).lower(),
-         int(g.get("comments") or 0)]
+         int(g.get("comments") or 0), created_month(g)]
         for g in items
     ]
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
@@ -394,7 +394,20 @@ h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-b
 .nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:20px 24px 16px;border-bottom:3px double var(--rule)}
 .nameplate h1{margin:0;font:700 48px/.95 var(--serif);letter-spacing:-.03em}
 .dateline{margin:10px 0 0;font:italic 14px/1.3 var(--serif);color:var(--muted)}
-.chart-wrap{margin:0;display:grid;gap:4px;justify-items:end}
+.chart-wrap{position:relative;margin:0;display:grid;gap:4px;justify-items:end}
+.chart .hit{fill:transparent;cursor:pointer;outline:none}.chart .hit:focus-visible{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chart .bar.sel{fill:var(--fg);opacity:1}
+.tip{position:absolute;z-index:3;translate:-50% calc(-100% - 6px);padding:4px 8px;border-radius:4px;background:var(--fg);color:var(--surface);font:600 11px/1.2 var(--ff);white-space:nowrap;pointer-events:none}
+.overview{position:relative;width:372px;height:22px;margin-top:2px}
+.overview svg{position:absolute;left:0;right:0;top:3px;width:100%;height:16px;fill:var(--faint);opacity:.7}
+.win{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--accent) 16%,transparent);border-block:1px solid var(--accent)}
+.grip{position:absolute;top:-3px;bottom:-3px;width:12px;translate:-50% 0;display:grid;place-items:center;border:1px solid var(--accent);border-radius:3px;background:var(--surface);cursor:ew-resize;touch-action:none;outline:none}
+.grip::after{content:"";width:3px;height:10px;border-inline:1px solid var(--accent)}
+.grip:hover,.grip:focus-visible{background:var(--accent)}.grip:hover::after,.grip:focus-visible::after{border-color:var(--surface)}
+.grip:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 35%,transparent)}
+.chart-hint{margin:2px 0 0;font:italic 11px/1.3 var(--serif);color:var(--faint)}
+.mchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--fg);font:600 12px var(--ff);cursor:pointer}
+.mchip::after{content:"\00d7";font-size:14px;color:var(--muted)}
 .chart-wrap figcaption{font:700 10px/1 var(--ff);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .chart{width:372px;height:74px;color:var(--accent);overflow:visible}
 .chart .bar{fill:currentColor;opacity:.5}.chart .pk{opacity:1}
@@ -470,7 +483,8 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  header .search{flex:1 1 180px}
  .nameplate{grid-template-columns:1fr;gap:14px;padding:14px 16px 14px}
  .nameplate h1{font-size:36px}
- .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}
+ .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.overview{width:100%;height:28px}.grip{width:18px}
+ .scope .mchip{display:inline-flex}
  .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{width:100%}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
@@ -510,6 +524,7 @@ SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@4
 # Search: Cmd/Ctrl+F focuses it (again inside the box: the browser's own find). Description and
 # file-name matches run here; content matches come from /search. Rows are built with textContent only.
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
+let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
 const prefs={font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
@@ -533,12 +548,15 @@ function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
 let seq=0,timer;
 function remember(raw){const u=new URL(location.href);if(raw)u.searchParams.set("q",raw);else u.searchParams.delete("q");history.replaceState(null,"",u)}
 function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;clearTimeout(timer);st.textContent="";remember(raw);
+ const base=sel?D.filter(g=>g[7]===sel):D,mc=$("mchip");
+ if(mc){mc.hidden=!sel;if(sel)mc.textContent="Created "+new Date(sel+"-01T00:00").toLocaleString("en",{month:"long",year:"numeric"})}
+ if(!s&&sel){show(base,"");return}
  if(!s){box.forEach((e,i)=>e.innerHTML=keep[i]);targets(prefs.open);cnt.textContent=keepCnt;pg.hidden=false;return}
  const w=s.split(/\s+/);
- if(!sc.includes("content")){show(D.filter(g=>{const h=(sc.includes("desc")?g[4]:"")+" "+(sc.includes("file")?g[5]:"");return w.every(x=>h.includes(x))}),raw);return}
+ if(!sc.includes("content")){show(base.filter(g=>{const h=(sc.includes("desc")?g[4]:"")+" "+(sc.includes("file")?g[5]:"");return w.every(x=>h.includes(x))}),raw);return}
  st.textContent="Searching contents…";
  timer=setTimeout(()=>fetch("/search?"+new URLSearchParams({q:raw,in:sc.join(",")}),{cache:"no-store"}).then(r=>r.json()).then(j=>{if(my!==seq)return;
-  const ids=new Set(j.ids);show(D.filter(g=>ids.has(g[0])),raw);
+  const ids=new Set(j.ids);show(base.filter(g=>ids.has(g[0])),raw);
   st.textContent=j.ready?"":`Indexing contents… ${j.done} of ${j.total}`;if(!j.ready)timer=setTimeout(run,800)})
   .catch(()=>{if(my===seq)st.textContent="Content search failed"}),150)}
 q.addEventListener("input",run);
@@ -606,6 +624,43 @@ function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.query
  for(let i=0;i<keep.length;i++){const t=document.createElement("div");t.innerHTML=keep[i];t.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());keep[i]=t.innerHTML}
  const k=D.findIndex(g=>g[0]===id);if(k>=0)D.splice(k,1);keepCnt=`${D.length} gists`;if(!q.value.trim())cnt.textContent=keepCnt;q.placeholder=`Search ${D.length} gists`}
 {const p=new URLSearchParams(location.search).get("q");if(p){q.value=p;run()}else if(q.value)run()}
+// Timeline chart: hover a bar for its count, click it to list that month, drag the two grippers to set the period.
+const fig=document.querySelector(".chart-wrap");
+if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"),tip=fig.querySelector(".tip"),ov=fig.querySelector(".overview"),
+ gl=fig.querySelector(".grip.l"),gr=fig.querySelector(".grip.r"),win=fig.querySelector(".win"),W=372,BASE=54,TALL=40,NS="http://www.w3.org/2000/svg";
+ let a=Math.max(0,M.length-24),b=M.length-1;
+ const dt=k=>new Date(k+"-01T00:00"),lab=k=>dt(k).toLocaleString("en",{month:"short"})+" \u2019"+k.slice(2,4),
+  full=k=>dt(k).toLocaleString("en",{month:"long",year:"numeric"}),
+  el=(n,at)=>{const e=document.createElementNS(NS,n);for(const k in at)e.setAttribute(k,at[k]);return e},
+  txt=(x,y,s,cl,an)=>{const e=el("text",{x,y,class:cl,"text-anchor":an});e.textContent=s;svg.append(e)};
+ function draw(){const S=M.slice(a,b+1),n=S.length,bw=W/n,pad=Math.min(1,bw*.15),top=Math.max(1,...S.map(x=>x[1])),
+   pk=S.reduce((p,x,i)=>x[1]>S[p][1]?i:p,0),h=c=>c?Math.max(2,Math.round(c*TALL/top)):1;svg.replaceChildren();
+  S.forEach(([k,c],i)=>{svg.append(el("rect",{class:"bar"+(i===pk?" pk":"")+(k===sel?" sel":""),x:(i*bw+pad).toFixed(2),y:BASE-h(c),width:Math.max(.5,bw-2*pad).toFixed(2),height:h(c)}));
+   const hit=el("rect",{class:"hit",x:(i*bw).toFixed(2),y:0,width:bw.toFixed(2),height:BASE+2,tabindex:0,role:"button","aria-label":`${full(k)}: ${c} gist${c===1?"":"s"}`});
+   hit.dataset.k=k;hit.dataset.c=c;svg.append(hit)});
+  svg.append(el("line",{x1:0,x2:W,y1:BASE+.5,y2:BASE+.5}));
+  txt(Math.min(Math.max(pk*bw+bw/2,40),W-40).toFixed(1),BASE-h(S[pk][1])-5,`${S[pk][1]} in ${lab(S[pk][0])}`,"ann","middle");
+  txt(0,68,lab(S[0][0]),"","start");txt(W,68,lab(S[n-1][0]),"","end");
+  svg.setAttribute("aria-label",`Gists written per month, ${full(S[0][0])} to ${full(S[n-1][0])}. Busiest: ${full(S[pk][0])}, ${S[pk][1]}.`);
+  const L=a/M.length*100,R=(b+1)/M.length*100;win.style.left=L+"%";win.style.width=(R-L)+"%";gl.style.left=L+"%";gr.style.left=R+"%";
+  for(const[g,v]of[[gl,a],[gr,b]]){g.setAttribute("aria-valuenow",v);g.setAttribute("aria-valuetext",full(M[v][0]))}}
+ {const top=Math.max(1,...M.map(x=>x[1])),bw=372/M.length,o=ov.querySelector("svg");
+  M.forEach(([k,c],i)=>{const hh=c?Math.max(1,Math.round(c*15/top)):0;if(hh)o.append(el("rect",{x:(i*bw).toFixed(2),y:16-hh,width:Math.max(.6,bw-.5).toFixed(2),height:hh}))})}
+ function hover(e){const t=e.target.closest&&e.target.closest(".hit");if(!t){tip.hidden=true;return}const r=fig.getBoundingClientRect(),hr=t.getBoundingClientRect(),c=+t.dataset.c;
+  tip.textContent=`${full(t.dataset.k)} \u00b7 ${c} gist${c===1?"":"s"}`;tip.hidden=false;tip.style.left=(hr.left+hr.width/2-r.left)+"px";tip.style.top=(hr.top-r.top+4)+"px"}
+ svg.addEventListener("pointermove",hover);svg.addEventListener("pointerleave",()=>tip.hidden=true);svg.addEventListener("focusin",hover);svg.addEventListener("focusout",()=>tip.hidden=true);
+ const pick=k=>{sel=sel===k?null:k;draw();run();if(sel)document.querySelector("main").scrollIntoView({behavior:"smooth",block:"start"})};
+ svg.addEventListener("click",e=>{const t=e.target.closest(".hit");if(t)pick(t.dataset.k)});
+ svg.addEventListener("keydown",e=>{const t=e.target.closest(".hit");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pick(t.dataset.k)}});
+ const mc=$("mchip");if(mc)mc.addEventListener("click",()=>{sel=null;draw();run()});
+ // the left gripper reaches back to the oldest gist, the right one forward to this month; bars rescale to the period
+ const setg=(g,v)=>{v=Math.round(v);if(g===gl)a=Math.min(Math.max(0,v),b);else b=Math.max(Math.min(M.length-1,v),a);draw()};
+ for(const g of[gl,gr]){
+  g.addEventListener("pointerdown",e=>{g.setPointerCapture(e.pointerId);e.preventDefault();g.focus()});
+  g.addEventListener("pointermove",e=>{if(!g.hasPointerCapture(e.pointerId))return;const r=ov.getBoundingClientRect(),f=(e.clientX-r.left)/r.width*M.length;setg(g,g===gl?f:f-1)});
+  g.addEventListener("keydown",e=>{const d={ArrowLeft:-1,ArrowDown:-1,ArrowRight:1,ArrowUp:1,PageDown:-12,PageUp:12,Home:-1e4,End:1e4}[e.key];
+   if(d){e.preventDefault();setg(g,(g===gl?a:b)+(e.shiftKey&&Math.abs(d)===1?d*12:d))}})}
+ draw()}
 let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
 setInterval(check,60000);document.addEventListener("visibilitychange",check);
@@ -723,6 +778,21 @@ def month_counts(items, months=24, now=None):
     return [(y, m, n) for (y, m), n in counts.items()]
 
 
+def all_months(items, now=None):
+    """[["YYYY-MM", n], ...] from the month of the oldest gist to this month: the chart's full timeline."""
+    now = now or datetime.now(MYT)
+    if not items:
+        return [[f"{now:%Y-%m}", 0]]
+    first = min(datetime.fromisoformat(g["created_at"].replace("Z", "+00:00")).astimezone(MYT) for g in items)
+    span = (now.year - first.year) * 12 + now.month - first.month + 1
+    return [[f"{y}-{m:02d}", n] for y, m, n in month_counts(items, months=span, now=now)]
+
+
+def created_month(g):
+    iso = g.get("created_at") or g.get("updated_at") or "1970-01-01T00:00:00Z"
+    return f'{datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(MYT):%Y-%m}'
+
+
 def month_chart(items, now=None):
     """A small editorial bar chart: one bar a month, the busiest month labelled. Plain SVG, no script."""
     data = month_counts(items, now=now)
@@ -761,6 +831,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
     sort = sort if sort in SORTS else "updated"
     field = f"{sort}_at"
     held = gists(refresh)  # the update check compares against this list, whatever the sort
+    months = all_months(held)
     items = sort_items(held, sort)
     qs = "" if sort == "updated" else f"&sort={sort}"
     pages = max(1, -(-len(items) // (2 * ROWS)))
@@ -788,7 +859,13 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         '<figcaption class="credit">The Reading Room, Library of Congress, 1901. Watercolour after a Detroit Publishing Co. photochrom.</figcaption></figure>'
         f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
-        f'<figure class="chart-wrap"><figcaption>Gists written, by month</figcaption>{month_chart(held)}</figure></div>'
+        f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
+        '<figcaption>Gists written, by month</figcaption>'
+        f'{month_chart(held)}<div class="tip" role=tooltip hidden></div>'
+        '<div class="overview"><svg viewBox="0 0 372 16" preserveAspectRatio="none" aria-hidden=true></svg><div class="win"></div>'
+        f'<div class="grip l" role=slider tabindex=0 aria-label="Start of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div>'
+        f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
+        '<p class="chart-hint">Drag the handles to change the period. Click a bar to list that month.</p></figure></div>'
         '<div class="top"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
@@ -796,7 +873,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
         f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
         f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header>'
-        f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<span id=st aria-live=polite></span></div>'
+        f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<button id=mchip class="mchip" type=button hidden></button><span id=st aria-live=polite></span></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
         f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
         f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'

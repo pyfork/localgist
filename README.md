@@ -61,7 +61,7 @@ Text is 12px in every font, the same as Finviz's news rows (14px on phones). Cor
 | Back to top button | Show · Hide (bottom right after the first screen; 40px on desktop, 48px on phones) | Show |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
-- Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).
+- Choices preview live behind the window. **Save** (or ⌘S) keeps them and closes the window. **Reset** puts the defaults back (Save to keep).
 - **Esc** closes once saved. With unsaved changes, Esc or ✕ asks: **Keep editing** or **Exit anyway** (which undoes the preview).
 - Saved settings and the Search-in ticks live in one cookie on this browser for a year. The server reads it on every page load, so they survive `pydown` / `pyup`, restarts and port changes. They do not follow you to another browser or a private window.
 - Source Sans 3 and IBM Plex Sans are loaded from Google Fonts, only while picked.
@@ -88,7 +88,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 
 - **Colour themes** in the settings window, shown as mini page previews: **Finviz** (default; white in light mode, charcoal in dark mode), FT salmon, Economist red, Cover Ink, Newsprint, Sage Ledger, Night Edition.
 - A thin three-colour strip of the theme runs along the top. No images.
-- Serif nameplate and dateline, section rules, and a **Gists written, by month** chart: hover a bar for its count, click it to list that month, drag the two handles to resize the period or the middle to move it, ✕ to reset.
+- Serif nameplate and dateline, and a **Gists written, by month** chart: hover a bar for its count, click it to list that month (the page stays put; a "Created May 2026 ×" chip under the chart clears it), drag the two handles to resize the period or the middle to move it, ✕ to reset.
 
 ## Check
 

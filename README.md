@@ -89,7 +89,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 
 - **Colour themes** in the settings window, shown as mini page previews: **Finviz** (default; white in light mode, charcoal in dark mode), FT salmon, Economist red, Cover Ink, Newsprint, Sage Ledger, Night Edition.
 - A thin three-colour strip of the theme runs along the top. No images.
-- Serif nameplate and dateline, and a **Gists written, by month** chart: hover a bar for its count, click it to list that month (the page stays put; a "Created May 2026 ×" chip under the chart clears it), drag the two handles to resize the period or the middle to move it, ✕ to reset.
+- Serif nameplate and dateline, and a **Gists written, by month** chart: hover a bar for its count, click it to list that month (the page stays put; a ✕ beside the bars clears it, the same way the ✕ beside the period browser resets the period), drag the two handles to resize the period or the middle to move it, ✕ to reset.
 
 ## Check
 

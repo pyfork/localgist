@@ -455,7 +455,7 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .chart .hit{fill:transparent;cursor:pointer;outline:none}.chart .hit:focus-visible{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
 .chart .bar.sel{fill:var(--fg);opacity:1}
 .tip{position:absolute;z-index:3;translate:-50% calc(-100% - 6px);padding:4px 8px;border-radius:var(--rs);background:var(--fg);color:var(--surface);font:600 11px/1.2 var(--ff);white-space:nowrap;pointer-events:none}
-.period{display:flex;align-items:center;gap:6px;margin-top:2px}
+.period{display:flex;align-items:center;gap:12px;margin-top:2px}
 .overview{position:relative;width:372px;height:22px}
 .preset{width:22px;height:22px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:var(--rs);background:var(--surface);color:var(--muted);cursor:pointer}
 .preset .hi{width:13px;height:13px}.preset:hover{color:var(--fg);border-color:var(--fg)}
@@ -469,8 +469,8 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .grip::after{content:"";width:3px;height:10px;border-inline:1px solid var(--accent)}
 .grip:hover,.grip:focus-visible{background:var(--accent)}.grip:hover::after,.grip:focus-visible::after{border-color:var(--surface)}
 .grip:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 35%,transparent)}
-.chart-hint{margin:2px 0 0;min-height:20px;display:flex;align-items:center;justify-content:flex-end;font:italic 11px/1.3 var(--serif);color:var(--faint)}
-.mclear{height:20px;padding:0 8px;font-size:11px;font-style:normal}  /* chart month filter: shown in the hint line, so nothing jumps */
+.chart-hint{margin:2px 0 0;font:italic 11px/1.3 var(--serif);color:var(--faint)}
+.chart-row{display:flex;align-items:center;gap:12px}.preset.off{visibility:hidden}  /* each ✕ sits beside what it resets and keeps its space, so rows never shift */
 @media (min-width:1024px){html:not([data-mast=off]) .scope .mchip{display:none}}  /* the chart has its own clear button */
 .mchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--accent);border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--fg);font:600 12px var(--ff);cursor:pointer}
 .mchip::after{content:"\\00d7";font-size:14px;color:var(--muted)}
@@ -687,7 +687,7 @@ function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.query
 const fig=document.querySelector(".chart-wrap");
 if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"),tip=fig.querySelector(".tip"),ov=fig.querySelector(".overview"),
  gl=fig.querySelector(".grip.l"),gr=fig.querySelector(".grip.r"),win=fig.querySelector(".win"),W=372,BASE=54,TALL=40,NS="http://www.w3.org/2000/svg";
- const A0=Math.max(0,M.length-24),B0=M.length-1,rs=fig.querySelector(".preset"),mx=fig.querySelector(".mclear");let a=A0,b=B0;
+ const A0=Math.max(0,M.length-24),B0=M.length-1,rs=fig.querySelector(".period .preset"),mx=fig.querySelector(".mclear");let a=A0,b=B0;
  const dt=k=>new Date(k+"-01T00:00"),lab=k=>dt(k).toLocaleString("en",{month:"short"})+" \u2019"+k.slice(2,4),
   full=k=>dt(k).toLocaleString("en",{month:"long",year:"numeric"}),
   el=(n,at)=>{const e=document.createElementNS(NS,n);for(const k in at)e.setAttribute(k,at[k]);return e},
@@ -703,8 +703,8 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
   svg.setAttribute("aria-label",`Gists written per month, ${full(S[0][0])} to ${full(S[n-1][0])}. Busiest: ${full(S[pk][0])}, ${S[pk][1]}.`);
   const L=a/M.length*100,R=(b+1)/M.length*100;win.style.left=L+"%";win.style.width=(R-L)+"%";gl.style.left=L+"%";gr.style.left=R+"%";
   for(const[g,v]of[[gl,a],[gr,b]]){g.setAttribute("aria-valuenow",v);g.setAttribute("aria-valuetext",full(M[v][0]))}
-  win.setAttribute("aria-valuetext",`${full(M[a][0])} to ${full(M[b][0])}`);rs.hidden=a===A0&&b===B0;
-  mx.hidden=!sel;mx.previousElementSibling.hidden=!!sel;if(sel){mx.textContent=`Created ${full(sel)}`;mx.ariaLabel=`Clear the ${full(sel)} filter`}}
+  win.setAttribute("aria-valuetext",`${full(M[a][0])} to ${full(M[b][0])}`);rs.classList.toggle("off",a===A0&&b===B0);
+  mx.classList.toggle("off",!sel);if(sel)mx.ariaLabel=mx.title=`Clear ${full(sel)}`}
  {const top=Math.max(1,...M.map(x=>x[1])),bw=372/M.length,o=ov.querySelector("svg");
   M.forEach(([k,c],i)=>{const hh=c?Math.max(1,Math.round(c*15/top)):0;if(hh)o.append(el("rect",{x:(i*bw).toFixed(2),y:16-hh,width:Math.max(.6,bw-.5).toFixed(2),height:hh}))})}
  function hover(e){const t=e.target.closest&&e.target.closest(".hit");if(!t){tip.hidden=true;return}const r=fig.getBoundingClientRect(),hr=t.getBoundingClientRect(),c=+t.dataset.c;
@@ -942,14 +942,13 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
         f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
         '<figcaption>Gists written, by month</figcaption>'
-        f'{month_chart(held)}<div class="tip" role=tooltip hidden></div>'
+        f'<div class="chart-row">{month_chart(held)}<button class="preset mclear off" type=button aria-label="Clear the month filter" title="Clear month">{XMARK}</button></div><div class="tip" role=tooltip hidden></div>'
         '<div class="period"><div class="overview"><svg viewBox="0 0 372 16" preserveAspectRatio="none" aria-hidden=true></svg>'
         '<div class="win" role=slider tabindex=0 aria-label="Move the period"></div>'
         f'<div class="grip l" role=slider tabindex=0 aria-label="Start of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div>'
         f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
-        f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period" hidden>{XMARK}</button></div>'
-        '<p class="chart-hint"><span>Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</span>'
-        '<button class="mchip mclear" type=button hidden></button></p></figure></div></div>'
+        f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period">{XMARK}</button></div>'
+        '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div></div>'
                 f'<div class="top"><div class="bar"><header><span class="brandrow"><a class="brand" href="/">localgist</a>{reload}</span>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'

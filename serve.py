@@ -469,9 +469,11 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .grip::after{content:"";width:3px;height:10px;border-inline:1px solid var(--accent)}
 .grip:hover,.grip:focus-visible{background:var(--accent)}.grip:hover::after,.grip:focus-visible::after{border-color:var(--surface)}
 .grip:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 35%,transparent)}
-.chart-hint{margin:2px 0 0;font:italic 11px/1.3 var(--serif);color:var(--faint)}
+.chart-hint{margin:2px 0 0;min-height:20px;display:flex;align-items:center;justify-content:flex-end;font:italic 11px/1.3 var(--serif);color:var(--faint)}
+.mclear{height:20px;padding:0 8px;font-size:11px;font-style:normal}  /* chart month filter: shown in the hint line, so nothing jumps */
+@media (min-width:1024px){html:not([data-mast=off]) .scope .mchip{display:none}}  /* the chart has its own clear button */
 .mchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--accent);border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--fg);font:600 12px var(--ff);cursor:pointer}
-.mchip::after{content:"\00d7";font-size:14px;color:var(--muted)}
+.mchip::after{content:"\\00d7";font-size:14px;color:var(--muted)}
 .chart-wrap figcaption{font:700 10px/1 var(--ff);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .chart{width:372px;height:74px;color:var(--accent);overflow:visible}
 .chart .bar{fill:currentColor;opacity:.5}.chart .pk{opacity:1}
@@ -632,7 +634,7 @@ const changed=()=>{apply(form());justSaved=false;status();asking(false)};
 function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
 function close(){asking(false);dlg.close();gear.focus()}
 function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
-function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status()}
+function save(){saved=form();Object.assign(prefs,saved);store();close();say("Settings saved")}
 gear.addEventListener("click",()=>{setForm(saved);apply(saved);justSaved=false;status();asking(false);dlg.showModal()});
 dlg.addEventListener("change",changed);
 $("m-reset").addEventListener("click",()=>{setForm(JSON.parse(dlg.dataset.defaults));changed()});
@@ -684,7 +686,7 @@ function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.query
 const fig=document.querySelector(".chart-wrap");
 if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"),tip=fig.querySelector(".tip"),ov=fig.querySelector(".overview"),
  gl=fig.querySelector(".grip.l"),gr=fig.querySelector(".grip.r"),win=fig.querySelector(".win"),W=372,BASE=54,TALL=40,NS="http://www.w3.org/2000/svg";
- const A0=Math.max(0,M.length-24),B0=M.length-1,rs=fig.querySelector(".preset");let a=A0,b=B0;
+ const A0=Math.max(0,M.length-24),B0=M.length-1,rs=fig.querySelector(".preset"),mx=fig.querySelector(".mclear");let a=A0,b=B0;
  const dt=k=>new Date(k+"-01T00:00"),lab=k=>dt(k).toLocaleString("en",{month:"short"})+" \u2019"+k.slice(2,4),
   full=k=>dt(k).toLocaleString("en",{month:"long",year:"numeric"}),
   el=(n,at)=>{const e=document.createElementNS(NS,n);for(const k in at)e.setAttribute(k,at[k]);return e},
@@ -700,16 +702,17 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
   svg.setAttribute("aria-label",`Gists written per month, ${full(S[0][0])} to ${full(S[n-1][0])}. Busiest: ${full(S[pk][0])}, ${S[pk][1]}.`);
   const L=a/M.length*100,R=(b+1)/M.length*100;win.style.left=L+"%";win.style.width=(R-L)+"%";gl.style.left=L+"%";gr.style.left=R+"%";
   for(const[g,v]of[[gl,a],[gr,b]]){g.setAttribute("aria-valuenow",v);g.setAttribute("aria-valuetext",full(M[v][0]))}
-  win.setAttribute("aria-valuetext",`${full(M[a][0])} to ${full(M[b][0])}`);rs.hidden=a===A0&&b===B0}
+  win.setAttribute("aria-valuetext",`${full(M[a][0])} to ${full(M[b][0])}`);rs.hidden=a===A0&&b===B0;
+  mx.hidden=!sel;mx.previousElementSibling.hidden=!!sel;if(sel){mx.textContent=`Created ${full(sel)}`;mx.ariaLabel=`Clear the ${full(sel)} filter`}}
  {const top=Math.max(1,...M.map(x=>x[1])),bw=372/M.length,o=ov.querySelector("svg");
   M.forEach(([k,c],i)=>{const hh=c?Math.max(1,Math.round(c*15/top)):0;if(hh)o.append(el("rect",{x:(i*bw).toFixed(2),y:16-hh,width:Math.max(.6,bw-.5).toFixed(2),height:hh}))})}
  function hover(e){const t=e.target.closest&&e.target.closest(".hit");if(!t){tip.hidden=true;return}const r=fig.getBoundingClientRect(),hr=t.getBoundingClientRect(),c=+t.dataset.c;
   tip.textContent=`${full(t.dataset.k)} \u00b7 ${c} gist${c===1?"":"s"}`;tip.hidden=false;tip.style.left=(hr.left+hr.width/2-r.left)+"px";tip.style.top=(hr.top-r.top+4)+"px"}
  svg.addEventListener("pointermove",hover);svg.addEventListener("pointerleave",()=>tip.hidden=true);svg.addEventListener("focusin",hover);svg.addEventListener("focusout",()=>tip.hidden=true);
- const pick=k=>{sel=sel===k?null:k;draw();run();if(sel)document.querySelector("main").scrollIntoView({behavior:"smooth",block:"start"})};
+ const pick=k=>{sel=sel===k?null:k;draw();run()};
  svg.addEventListener("click",e=>{const t=e.target.closest(".hit");if(t)pick(t.dataset.k)});
  svg.addEventListener("keydown",e=>{const t=e.target.closest(".hit");if(t&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pick(t.dataset.k)}});
- const mc=$("mchip");if(mc)mc.addEventListener("click",()=>{sel=null;draw();run()});
+ const mc=$("mchip"),clear=()=>{sel=null;draw();run()};if(mc)mc.addEventListener("click",clear);mx.addEventListener("click",clear);
  // the left gripper reaches back to the oldest gist, the right one forward to this month; bars rescale to the period
  const setg=(g,v)=>{v=Math.round(v);if(g===gl)a=Math.min(Math.max(0,v),b);else b=Math.max(Math.min(M.length-1,v),a);draw()};
  for(const g of[gl,gr]){
@@ -943,7 +946,8 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="grip l" role=slider tabindex=0 aria-label="Start of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div>'
         f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
         f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period" hidden>{XMARK}</button></div>'
-        '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div></div>'
+        '<p class="chart-hint"><span>Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</span>'
+        '<button class="mchip mclear" type=button hidden></button></p></figure></div></div>'
                 '<div class="top"><div class="bar"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'

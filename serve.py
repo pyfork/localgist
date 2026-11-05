@@ -392,10 +392,10 @@ input[name=t]{position:absolute;opacity:0;pointer-events:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
 h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-bottom:1px solid var(--line);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
 .masthead{position:relative;margin:0;border-bottom:1px solid var(--line)}
-.masthead img{display:block;width:100%;height:220px;object-fit:cover;object-position:50% 38%}
-.credit{position:absolute;right:10px;bottom:8px;margin:0;padding:2px 8px;font:italic 11px/1.4 var(--serif);color:var(--muted);background:var(--credit-bg);border-radius:2px}
-.nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:20px 24px 16px;border-bottom:3px double var(--rule)}
-.nameplate h1{margin:0;font:700 48px/.95 var(--serif);letter-spacing:-.03em}
+.masthead img{display:block;width:100%;height:110px;object-fit:cover;object-position:50% 42%}  /* art stays a garnish: never taller than 110px */
+.credit{position:absolute;right:10px;bottom:6px;margin:0;padding:1px 7px;font:italic 10.5px/1.4 var(--serif);color:var(--muted);background:var(--credit-bg);border-radius:2px}
+.nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:14px 24px 12px;border-bottom:3px double var(--rule)}
+.nameplate h1{margin:0;font:700 40px/.95 var(--serif);letter-spacing:-.03em}
 .dateline{margin:10px 0 0;font:italic 14px/1.3 var(--serif);color:var(--muted)}
 .chart-wrap{position:relative;margin:0;display:grid;gap:4px;justify-items:end}
 .chart .hit{fill:transparent;cursor:pointer;outline:none}.chart .hit:focus-visible{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
@@ -418,10 +418,10 @@ h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-b
 .chart line{stroke:var(--rule);stroke-width:1}
 header .brand{display:none}
 .art-empty{padding:28px 0 8px;text-align:center}
-.art-empty img{display:block;width:min(340px,90%);margin:0 auto 14px}
+.art-empty img{display:block;max-height:110px;width:auto;max-width:90%;margin:0 auto 12px}
 .art-empty p{margin:0;font:italic 16px/1.4 var(--serif);color:var(--muted)}
-.colophon{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:center;padding:22px 24px 26px;border-top:3px double var(--rule);font:italic 13px/1.6 var(--serif);color:var(--muted)}
-.colophon img{display:block;width:200px;height:auto}
+.colophon{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:22px 24px 26px;border-top:3px double var(--rule);font:italic 13px/1.6 var(--serif);color:var(--muted)}
+.colophon img{display:block;height:110px;width:auto}
 .colophon p{margin:0}.colophon b{font-style:normal;color:var(--fg)}
 .colophon a{color:inherit;text-decoration:underline;text-decoration-color:var(--field-line)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .art{filter:brightness(.8) contrast(1.06)}}
@@ -485,7 +485,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  #t1:checked~.top label[for=t1],#t2:checked~.top label[for=t2]{color:var(--fg);border-color:var(--fg)}
  #t1:focus-visible~.top label[for=t1],#t2:focus-visible~.top label[for=t2]{outline:2px solid var(--focus);outline-offset:-2px}
  main{display:block;padding:0 16px 32px}h2{display:none}
- .masthead img{height:130px}
+ .masthead img{height:90px}
  .credit{position:static;display:block;padding:6px 16px;font-size:10.5px;background:none;border-radius:0}
  header .meta{flex:1 1 auto;justify-content:space-between}
  header .search{flex:1 1 180px}
@@ -493,7 +493,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .nameplate h1{font-size:36px}
  .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.overview{width:100%;height:28px}.grip{width:18px}
  .scope .mchip{display:inline-flex}
- .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{width:100%}
+ .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{height:auto;max-height:110px;width:auto;max-width:100%}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

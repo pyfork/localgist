@@ -52,7 +52,7 @@ assert 'data-size="l" data-theme="dark"' in page
 assert 'name=hsize value=l aria-label="Large text" checked' in page and 'name=size value=l aria-label="Large text" checked' in page
 assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page
 assert f'data-csrf="{serve.CSRF}"' in page and "&quot;theme&quot;: &quot;system&quot;" in page  # Reset defaults ride on the dialog
-assert serve.comments({"comments": 3}).endswith("3</span>") and "3 comments" in serve.comments({"comments": 3})
+assert serve.comments({"comments": 3}).startswith('<sup class="cd"') and "3 comments" in serve.comments({"comments": 3})
 assert serve.comments({"comments": 0}) == "" and "1 comment\"" in serve.comments({"comments": 1})
 assert 'data-font="source"' in page and "showtime" not in page and "fonts.googleapis.com" in page
 assert 'href="https://gist.github.com/g1" target=_blank rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page

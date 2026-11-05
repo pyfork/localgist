@@ -547,7 +547,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
- td.act{width:102px;padding-top:6px}.ib{width:28px;height:30px}.ib.copy{width:70px}.rc button{height:30px;padding:0 12px;font-size:13px}td.cm{padding-top:10px}
+ td.act{display:none}td.cm{padding-top:10px}  /* copy and delete are desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
 """

@@ -38,10 +38,10 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"palette": "cover", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
-assert serve.read_prefs("lg=palette%3Dsage")["palette"] == "sage" and serve.read_prefs("lg=palette%3Devil")["palette"] == "cover"
+assert serve.read_prefs(None) == {"palette": "finviz", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs("lg=palette%3Dsage")["palette"] == "sage" and serve.read_prefs("lg=palette%3Devil")["palette"] == "finviz"
 assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
-    {"palette": "cover", "art": "image", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
+    {"palette": "finviz", "art": "image", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 

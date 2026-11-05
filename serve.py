@@ -227,14 +227,14 @@ SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
 # Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the watercolour wash shown on the card.
 PALETTES = {
-    "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
     "finviz": {"name": "Finviz", "note": "White, light or dark", "paper": "#ffffff", "ink": "#1e222d", "accent": "#2f6bd1", "link": "#1d4ea8", "rule": "#e7e9ee", "muted": "#6b7280", "wash": ("#2f6bd1", "#8fa3c2", "#e7ebf2")},
+    "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
     "newsprint": {"name": "Newsprint", "note": "NYT-like", "paper": "#fbf8f1", "ink": "#1d1b16", "accent": "#2f4b73", "link": "#1f3a5f", "rule": "#e6dfd0", "muted": "#6a6356", "wash": ("#7c95b8", "#c8a874", "#e9e2d0")},
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
 }
 ARTS = {"image": "Watercolour", "strip": "Colour strip only"}  # first one is the default
-DEFAULT_PREFS = {"palette": "cover", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+DEFAULT_PREFS = {"palette": "finviz", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
 DISPLAY_KEYS = ("palette", "art", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
 
 
@@ -447,9 +447,16 @@ html[data-art=strip] .colophon{display:none}
 .chart .hit{fill:transparent;cursor:pointer;outline:none}.chart .hit:focus-visible{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
 .chart .bar.sel{fill:var(--fg);opacity:1}
 .tip{position:absolute;z-index:3;translate:-50% calc(-100% - 6px);padding:4px 8px;border-radius:4px;background:var(--fg);color:var(--surface);font:600 11px/1.2 var(--ff);white-space:nowrap;pointer-events:none}
-.overview{position:relative;width:372px;height:22px;margin-top:2px}
+.period{display:flex;align-items:center;gap:6px;margin-top:2px}
+.overview{position:relative;width:372px;height:22px}
+.preset{width:22px;height:22px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:5px;background:var(--surface);color:var(--muted);cursor:pointer}
+.preset .hi{width:13px;height:13px}.preset:hover{color:var(--fg);border-color:var(--fg)}
+.chart g.m:hover .bar,.chart g.m:focus-within .bar{fill:var(--fg);opacity:1}
+.chart g.m:hover .hit{fill:color-mix(in srgb,var(--accent) 9%,transparent)}
 .overview svg{position:absolute;left:0;right:0;top:3px;width:100%;height:16px;fill:var(--faint);opacity:.7}
-.win{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--accent) 16%,transparent);border-block:1px solid var(--accent)}
+.win{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--accent) 16%,transparent);border-block:1px solid var(--accent);cursor:grab;touch-action:none;outline:none}
+.win:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}.win.drag{cursor:grabbing;background:color-mix(in srgb,var(--accent) 32%,transparent)}
+.win:focus-visible{box-shadow:0 0 0 2px var(--focus)}
 .grip{position:absolute;top:-3px;bottom:-3px;width:12px;translate:-50% 0;display:grid;place-items:center;border:1px solid var(--accent);border-radius:3px;background:var(--surface);cursor:ew-resize;touch-action:none;outline:none}
 .grip::after{content:"";width:3px;height:10px;border-inline:1px solid var(--accent)}
 .grip:hover,.grip:focus-visible{background:var(--accent)}.grip:hover::after,.grip:focus-visible::after{border-color:var(--surface)}
@@ -543,7 +550,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  header .search{flex:1 1 180px}
  .nameplate{grid-template-columns:1fr;gap:14px;padding:14px 16px 14px}
  .nameplate h1{font-size:36px}
- .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.overview{width:100%;height:28px}.grip{width:18px}
+ .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.period{width:100%}.overview{flex:1;width:auto;height:28px}.grip{width:18px}.preset{width:28px;height:28px}
  .scope .mchip{display:inline-flex}
  .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{height:auto;max-height:110px;width:auto;max-width:100%}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
@@ -686,22 +693,23 @@ function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.query
 const fig=document.querySelector(".chart-wrap");
 if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"),tip=fig.querySelector(".tip"),ov=fig.querySelector(".overview"),
  gl=fig.querySelector(".grip.l"),gr=fig.querySelector(".grip.r"),win=fig.querySelector(".win"),W=372,BASE=54,TALL=40,NS="http://www.w3.org/2000/svg";
- let a=Math.max(0,M.length-24),b=M.length-1;
+ const A0=Math.max(0,M.length-24),B0=M.length-1,rs=fig.querySelector(".preset");let a=A0,b=B0;
  const dt=k=>new Date(k+"-01T00:00"),lab=k=>dt(k).toLocaleString("en",{month:"short"})+" \u2019"+k.slice(2,4),
   full=k=>dt(k).toLocaleString("en",{month:"long",year:"numeric"}),
   el=(n,at)=>{const e=document.createElementNS(NS,n);for(const k in at)e.setAttribute(k,at[k]);return e},
   txt=(x,y,s,cl,an)=>{const e=el("text",{x,y,class:cl,"text-anchor":an});e.textContent=s;svg.append(e)};
  function draw(){const S=M.slice(a,b+1),n=S.length,bw=W/n,pad=Math.min(1,bw*.15),top=Math.max(1,...S.map(x=>x[1])),
    pk=S.reduce((p,x,i)=>x[1]>S[p][1]?i:p,0),h=c=>c?Math.max(2,Math.round(c*TALL/top)):1;svg.replaceChildren();
-  S.forEach(([k,c],i)=>{svg.append(el("rect",{class:"bar"+(i===pk?" pk":"")+(k===sel?" sel":""),x:(i*bw+pad).toFixed(2),y:BASE-h(c),width:Math.max(.5,bw-2*pad).toFixed(2),height:h(c)}));
+  S.forEach(([k,c],i)=>{const gm=el("g",{class:"m"});gm.append(el("rect",{class:"bar"+(i===pk?" pk":"")+(k===sel?" sel":""),x:(i*bw+pad).toFixed(2),y:BASE-h(c),width:Math.max(.5,bw-2*pad).toFixed(2),height:h(c)}));
    const hit=el("rect",{class:"hit",x:(i*bw).toFixed(2),y:0,width:bw.toFixed(2),height:BASE+2,tabindex:0,role:"button","aria-label":`${full(k)}: ${c} gist${c===1?"":"s"}`});
-   hit.dataset.k=k;hit.dataset.c=c;svg.append(hit)});
+   hit.dataset.k=k;hit.dataset.c=c;gm.append(hit);svg.append(gm)});
   svg.append(el("line",{x1:0,x2:W,y1:BASE+.5,y2:BASE+.5}));
   txt(Math.min(Math.max(pk*bw+bw/2,40),W-40).toFixed(1),BASE-h(S[pk][1])-5,`${S[pk][1]} in ${lab(S[pk][0])}`,"ann","middle");
   txt(0,68,lab(S[0][0]),"","start");txt(W,68,lab(S[n-1][0]),"","end");
   svg.setAttribute("aria-label",`Gists written per month, ${full(S[0][0])} to ${full(S[n-1][0])}. Busiest: ${full(S[pk][0])}, ${S[pk][1]}.`);
   const L=a/M.length*100,R=(b+1)/M.length*100;win.style.left=L+"%";win.style.width=(R-L)+"%";gl.style.left=L+"%";gr.style.left=R+"%";
-  for(const[g,v]of[[gl,a],[gr,b]]){g.setAttribute("aria-valuenow",v);g.setAttribute("aria-valuetext",full(M[v][0]))}}
+  for(const[g,v]of[[gl,a],[gr,b]]){g.setAttribute("aria-valuenow",v);g.setAttribute("aria-valuetext",full(M[v][0]))}
+  win.setAttribute("aria-valuetext",`${full(M[a][0])} to ${full(M[b][0])}`);rs.hidden=a===A0&&b===B0}
  {const top=Math.max(1,...M.map(x=>x[1])),bw=372/M.length,o=ov.querySelector("svg");
   M.forEach(([k,c],i)=>{const hh=c?Math.max(1,Math.round(c*15/top)):0;if(hh)o.append(el("rect",{x:(i*bw).toFixed(2),y:16-hh,width:Math.max(.6,bw-.5).toFixed(2),height:hh}))})}
  function hover(e){const t=e.target.closest&&e.target.closest(".hit");if(!t){tip.hidden=true;return}const r=fig.getBoundingClientRect(),hr=t.getBoundingClientRect(),c=+t.dataset.c;
@@ -718,6 +726,14 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
   g.addEventListener("pointermove",e=>{if(!g.hasPointerCapture(e.pointerId))return;const r=ov.getBoundingClientRect(),f=(e.clientX-r.left)/r.width*M.length;setg(g,g===gl?f:f-1)});
   g.addEventListener("keydown",e=>{const d={ArrowLeft:-1,ArrowDown:-1,ArrowRight:1,ArrowUp:1,PageDown:-12,PageUp:12,Home:-1e4,End:1e4}[e.key];
    if(d){e.preventDefault();setg(g,(g===gl?a:b)+(e.shiftKey&&Math.abs(d)===1?d*12:d))}})}
+ // the middle of the window moves the whole period: its length stays fixed
+ const slide=to=>{const n=b-a;a=Math.min(Math.max(0,Math.round(to)),M.length-1-n);b=a+n;draw()};
+ let drag=null;
+ win.addEventListener("pointerdown",e=>{win.setPointerCapture(e.pointerId);e.preventDefault();win.focus();win.classList.add("drag");drag={x:e.clientX,a}});
+ win.addEventListener("pointermove",e=>{if(!drag)return;const r=ov.getBoundingClientRect();slide(drag.a+(e.clientX-drag.x)/r.width*M.length)});
+ const stop=()=>{drag=null;win.classList.remove("drag")};win.addEventListener("pointerup",stop);win.addEventListener("pointercancel",stop);
+ win.addEventListener("keydown",e=>{const d={ArrowLeft:-1,ArrowRight:1,PageDown:-12,PageUp:12,Home:-1e4,End:1e4}[e.key];if(d){e.preventDefault();slide(a+(e.shiftKey&&Math.abs(d)===1?d*12:d))}});
+ rs.addEventListener("click",()=>{a=A0;b=B0;if(sel){sel=null;run()}draw();gl.focus()});
  draw()}
 let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
@@ -946,10 +962,12 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
         '<figcaption>Gists written, by month</figcaption>'
         f'{month_chart(held)}<div class="tip" role=tooltip hidden></div>'
-        '<div class="overview"><svg viewBox="0 0 372 16" preserveAspectRatio="none" aria-hidden=true></svg><div class="win"></div>'
+        '<div class="period"><div class="overview"><svg viewBox="0 0 372 16" preserveAspectRatio="none" aria-hidden=true></svg>'
+        '<div class="win" role=slider tabindex=0 aria-label="Move the period"></div>'
         f'<div class="grip l" role=slider tabindex=0 aria-label="Start of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div>'
         f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
-        '<p class="chart-hint">Drag the handles to change the period. Click a bar to list that month.</p></figure></div>'
+        f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period" hidden>{XMARK}</button></div>'
+        '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div>'
         '<div class="top"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'

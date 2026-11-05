@@ -449,15 +449,20 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc button{height:20px;padding:0 9px;border-radius:5px;font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
 .rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
-.sizeseg{display:inline-flex;align-items:flex-end;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px}
-.sizeseg label{position:relative;cursor:pointer}
+.sizeseg{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 11px;border:1px solid var(--field-line);border-radius:8px;background:var(--field);color:var(--muted)}
+.sizeseg .sa,.sizeseg .sb{font-family:Georgia,"Times New Roman",serif;font-weight:600;line-height:1}.sizeseg .sa{font-size:10.5px}.sizeseg .sb{font-size:16px}
+.sizeseg .track{position:relative;display:flex;align-items:center;gap:6px}
+.sizeseg .track::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:1px;background:var(--field-line)}
+.sizeseg label{position:relative;display:grid;place-items:center;width:16px;height:24px;cursor:pointer}
 .sizeseg input{position:absolute;opacity:0;pointer-events:none}
-.sizeseg span{display:grid;place-items:end center;width:30px;height:28px;padding-bottom:5px;border-radius:6px;font-family:Georgia,"Times New Roman",serif;font-weight:600;line-height:1;color:var(--muted)}
-.sizeseg .a-s{font-size:11px}.sizeseg .a-m{font-size:14.5px}.sizeseg .a-l{font-size:19px}
-.sizeseg label:hover span{color:var(--fg)}
-.sizeseg label:has(input:checked) span{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .14)}
-.sizeseg label:has(input:focus-visible) span{outline:2px solid var(--focus);outline-offset:-1px}
-.m-body .sizeseg span{width:56px;height:38px;padding-bottom:7px}.m-body .sizeseg .a-s{font-size:13px}.m-body .sizeseg .a-m{font-size:18px}.m-body .sizeseg .a-l{font-size:24px}
+.sizeseg .dot{position:relative;border-radius:50%;background:var(--field);border:1.5px solid var(--muted);transition:transform .12s}
+.sizeseg .d-s{width:7px;height:7px}.sizeseg .d-m{width:10px;height:10px}.sizeseg .d-l{width:13px;height:13px}
+.sizeseg label:hover .dot{border-color:var(--fg);transform:scale(1.15)}
+.sizeseg label:has(input:checked) .dot{background:var(--fg);border-color:var(--fg)}
+.sizeseg label:has(input:focus-visible) .dot{outline:2px solid var(--focus);outline-offset:2px}
+.m-body .sizeseg{height:44px;padding:0 16px;gap:12px}.m-body .sizeseg .track{gap:14px}.m-body .sizeseg label{width:22px;height:32px}
+.m-body .sizeseg .d-s{width:9px;height:9px}.m-body .sizeseg .d-m{width:13px;height:13px}.m-body .sizeseg .d-l{width:17px;height:17px}
+.m-body .sizeseg .sa{font-size:13px}.m-body .sizeseg .sb{font-size:21px}
 .btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
 .note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
 .toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
@@ -726,10 +731,10 @@ def sort_items(items, sort):
 
 
 def size_picker(name, current):
-    """Text size as three letter A's of growing size (one tap, no +/- buttons). Used in the header and the settings window."""
-    return (f'<div class="sizeseg" role=radiogroup aria-label="Text size">' + "".join(
+    """Text size as three dots of growing size on a track, small A to large A (Flickr-style). Header and settings window."""
+    return (f'<div class="sizeseg" role=radiogroup aria-label="Text size"><span class="sa" aria-hidden=true>A</span><span class="track">' + "".join(
         f'<label title="{v} text"><input type=radio name={name} value={k} aria-label="{v} text"{" checked" if current == k else ""}>'
-        f'<span class="a-{k}" aria-hidden=true>A</span></label>' for k, v in SIZES.items()) + '</div>')
+        f'<span class="dot d-{k}" aria-hidden=true></span></label>' for k, v in SIZES.items()) + '</span><span class="sb" aria-hidden=true>A</span></div>')
 
 
 def settings_dialog(prefs):

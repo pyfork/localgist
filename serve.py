@@ -228,6 +228,7 @@ THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is 
 # Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the watercolour wash shown on the card.
 PALETTES = {
     "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
+    "finviz": {"name": "Finviz", "note": "White, light or dark", "paper": "#ffffff", "ink": "#1e222d", "accent": "#2f6bd1", "link": "#1d4ea8", "rule": "#e7e9ee", "muted": "#6b7280", "wash": ("#2f6bd1", "#8fa3c2", "#e7ebf2")},
     "newsprint": {"name": "Newsprint", "note": "NYT-like", "paper": "#fbf8f1", "ink": "#1d1b16", "accent": "#2f4b73", "link": "#1f3a5f", "rule": "#e6dfd0", "muted": "#6a6356", "wash": ("#7c95b8", "#c8a874", "#e9e2d0")},
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
@@ -326,6 +327,10 @@ html[data-palette=cover]{--w1:#3f63a8;--w2:#d4683f;--w3:#efe2c6}html[data-palett
 html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c;--credit-bg:rgb(247 241 227 / .85)}
 html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741;--credit-bg:rgb(243 244 238 / .85)}
 html[data-palette=night]{DARK;--accent:#d3ad7a}
+html[data-palette=finviz]{--page:#f3f4f6;--surface:#ffffff;--fg:#1e222d;--muted:#6b7280;--faint:#9aa0ab;--line:#e7e9ee;--rule:#1e222d;--link:#1d4ea8;--seen:#6b3fa0;--hover:#f3f6fb;--field:#f5f6f8;--field-line:#d7dbe1;--kbd:#ffffff;--accent:#2f6bd1;--credit-bg:rgb(255 255 255 / .85);--w1:#2f6bd1;--w2:#8fa3c2;--w3:#e7ebf2}
+html[data-palette=finviz] .nameplate h1,html[data-palette=finviz] h2{font-family:var(--ff);letter-spacing:-.01em}  /* Finviz is all sans */
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--credit-bg:rgb(34 38 47 / .85);--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}}
+:root[data-theme=dark][data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--credit-bg:rgb(34 38 47 / .85);--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=cover]{--accent:#e48a62}:root:not([data-theme=light])[data-palette=sage]{--accent:#9cbf8f}:root:not([data-theme=light])[data-palette=night]{--accent:#d3ad7a}}
 :root[data-theme=dark][data-palette=cover]{--accent:#e48a62}:root[data-theme=dark][data-palette=sage]{--accent:#9cbf8f}:root[data-theme=dark][data-palette=night]{--accent:#d3ad7a}
 html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px;--serif:Georgia,"Iowan Old Style","Times New Roman",serif}
@@ -377,7 +382,7 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .m-body.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 48px;padding:34px 40px 36px}
 .m-body.grid .seg{max-width:420px;margin:0 auto}
 .m-body.grid fieldset.wide{grid-column:1/-1}
-.pcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.pcards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .pcard{position:relative;cursor:pointer;text-align:left}
 .pcard input{position:absolute;opacity:0;pointer-events:none}
 .pv{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--field-line);transition:border-color .12s,transform .12s}

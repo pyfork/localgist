@@ -21,14 +21,20 @@ import argparse
 import cv2
 import numpy as np
 
-PAPER = np.array([236, 244, 248], np.float32) / 255  # BGR, warm white
-PALETTE = [  # (luminance stop, BGR colour): high-key, shadows never reach black
-    (0.00, (112, 84, 64)),    # deep indigo wash
-    (0.30, (150, 122, 98)),   # indigo
-    (0.55, (128, 166, 200)),  # sepia ochre
-    (0.80, (196, 220, 234)),  # pale wash
-    (1.00, (236, 244, 248)),  # paper
-]
+def _bgr(*stops):
+    """(luminance, (r, g, b)) stops -> (luminance, BGR) for OpenCV."""
+    return [(l, (b, g, r)) for l, (r, g, b) in stops]
+
+
+# One limited palette per colour theme in the app; shadows never reach black, the last stop is the paper.
+PALETTES = {
+    "newsprint": _bgr((0, (64, 84, 112)), (.30, (98, 122, 150)), (.55, (170, 128, 92)), (.80, (222, 200, 170)), (1, (248, 244, 236))),
+    "cover": _bgr((0, (38, 52, 96)), (.30, (66, 100, 168)), (.55, (210, 108, 70)), (.80, (240, 214, 190)), (1, (248, 242, 228))),
+    "sage": _bgr((0, (56, 70, 52)), (.30, (112, 136, 100)), (.55, (200, 170, 98)), (.80, (228, 230, 214)), (1, (243, 244, 236))),
+    "night": _bgr((0, (40, 52, 74)), (.30, (66, 88, 124)), (.55, (164, 134, 88)), (.80, (206, 198, 178)), (1, (232, 226, 212))),
+}
+PALETTE = PALETTES["newsprint"]
+PAPER = np.array(PALETTE[-1][1], np.float32) / 255
 
 
 def tone(img):
@@ -54,7 +60,10 @@ def noise(shape, scale, rng):
     return cv2.normalize(cv2.GaussianBlur(big, (0, 0), scale / 3), None, 0, 1, cv2.NORM_MINMAX)
 
 
-def watercolor(img, seed=7):
+def watercolor(img, seed=7, palette="newsprint"):
+    global PALETTE, PAPER
+    PALETTE = PALETTES[palette]
+    PAPER = np.array(PALETTE[-1][1], np.float32) / 255
     rng = np.random.default_rng(seed)
     h, w = img.shape[:2]
 
@@ -115,6 +124,7 @@ def main():
     ap.add_argument("--crop", default="0,0,1,1", help="x0,y0,x1,y1 as fractions of the photo")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--quality", type=int, default=82)
+    ap.add_argument("--palette", choices=sorted(PALETTES), default="newsprint")
     a = ap.parse_args()
 
     img = cv2.imread(a.src, cv2.IMREAD_COLOR)
@@ -124,7 +134,7 @@ def main():
     h, w = img.shape[:2]
     img = img[int(y0 * h):int(y1 * h), int(x0 * w):int(x1 * w)]
     img = cv2.resize(img, (a.width, round(img.shape[0] * a.width / img.shape[1])), interpolation=cv2.INTER_AREA)
-    out = watercolor(img, a.seed)
+    out = watercolor(img, a.seed, a.palette)
     if not cv2.imwrite(a.dst, out, [cv2.IMWRITE_WEBP_QUALITY, a.quality]):
         raise SystemExit(f"cannot write {a.dst}")
     print(f"{a.dst}: {out.shape[1]}x{out.shape[0]}")

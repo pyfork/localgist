@@ -225,8 +225,15 @@ FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"} 
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
 SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is the default
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
-DEFAULT_PREFS = {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("font", "size", "theme", "open")  # what the settings window edits and Reset restores
+# Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the watercolour wash shown on the card.
+PALETTES = {
+    "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
+    "newsprint": {"name": "Newsprint", "note": "NYT-like", "paper": "#fbf8f1", "ink": "#1d1b16", "accent": "#2f4b73", "link": "#1f3a5f", "rule": "#e6dfd0", "muted": "#6a6356", "wash": ("#7c95b8", "#c8a874", "#e9e2d0")},
+    "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
+    "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
+}
+DEFAULT_PREFS = {"palette": "cover", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("palette", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -241,6 +248,8 @@ def read_prefs(cookie_header):
             p["font"] = f
         if (z := q.get("size", [""])[0]) in SIZES:
             p["size"] = z
+        if (pl := q.get("palette", [""])[0]) in PALETTES:
+            p["palette"] = pl
         if (th := q.get("theme", [""])[0]) in THEMES:
             p["theme"] = th
         if (o := q.get("open", [""])[0]) in OPENS:
@@ -309,6 +318,11 @@ CSS = """
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
 :root[data-theme=dark]{DARK}
+html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c;--credit-bg:rgb(247 241 227 / .85)}
+html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741;--credit-bg:rgb(243 244 238 / .85)}
+html[data-palette=night]{DARK;--accent:#d3ad7a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=cover]{--accent:#e48a62}:root:not([data-theme=light])[data-palette=sage]{--accent:#9cbf8f}:root:not([data-theme=light])[data-palette=night]{--accent:#d3ad7a}}
+:root[data-theme=dark][data-palette=cover]{--accent:#e48a62}:root[data-theme=dark][data-palette=sage]{--accent:#9cbf8f}:root[data-theme=dark][data-palette=night]{--accent:#d3ad7a}
 html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px;--serif:Georgia,"Iowan Old Style","Times New Roman",serif}
 html[data-font=helvetica]{--ff:Helvetica,"Helvetica Neue",Arial,sans-serif}
 html[data-font=source]{--ff:"Source Sans 3",Arial,sans-serif;--fs:13.5px}
@@ -356,7 +370,24 @@ dialog.modal[open]{animation:pop .16s ease-out}
 .m-body{padding:20px 24px 22px;text-align:center}
 .m-body fieldset{border:0;margin:0;padding:0;min-width:0}
 .m-body.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 48px;padding:34px 40px 36px}
-.m-body.grid .seg{max-width:420px;margin:0 auto}.m-body .seg span{height:38px;font-size:14px}
+.m-body.grid .seg{max-width:420px;margin:0 auto}
+.m-body.grid fieldset.wide{grid-column:1/-1}
+.pcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.pcard{position:relative;cursor:pointer;text-align:left}
+.pcard input{position:absolute;opacity:0;pointer-events:none}
+.pv{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--field-line);transition:border-color .12s,transform .12s}
+.pcard:hover .pv{border-color:var(--muted);transform:translateY(-1px)}
+.pcard:has(input:checked) .pv{border-color:var(--focus);box-shadow:0 0 0 2px var(--focus)}
+.pcard:has(input:focus-visible) .pv{outline:2px solid var(--focus);outline-offset:3px}
+.pstrip{display:flex;height:18px}.pstrip i{flex:1}
+.ppage{display:block;padding:7px 9px 6px}
+.pname{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:4px;margin-bottom:3px;border-bottom:3px double}
+.pname strong{font:600 14px/1 Georgia,serif;letter-spacing:-.02em}
+.pbars{display:flex;align-items:flex-end;gap:1.5px;height:24px}.pbars b{display:block;width:3px}
+.ppage u{display:flex;gap:6px;text-decoration:none;font-size:9.5px;line-height:1.5;border-bottom:1px solid;white-space:nowrap;overflow:hidden}
+.ppage em{font-style:normal;flex:none;width:38px}
+.plabel{display:block;padding:7px 9px 8px;font-size:12.5px;font-weight:600;color:var(--fg);background:rgb(0 0 0 / .2)}
+.plabel small{display:block;font-weight:400;font-size:11px;color:var(--muted)}.m-body .seg span{height:38px;font-size:14px}
 .m-body legend{padding:0;margin:0 auto 14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .m-foot{padding:14px 20px 14px 32px;border-top:1px solid var(--line);background:rgb(0 0 0 / .18)}
 .m-row{display:flex;align-items:center;gap:8px}
@@ -482,7 +513,8 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .m-row.ask{flex-wrap:wrap}
  dialog.modal{width:calc(100% - 24px);min-width:0}.m-body.grid{grid-template-columns:1fr;gap:26px;padding:24px 18px}
  .m-head{padding:14px 12px 12px 18px}.m-foot{padding:12px 14px 12px 18px}
- .hsize{display:none}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
+ .hsize{display:none}
+ .pcards{grid-template-columns:repeat(2,minmax(0,1fr))}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
  .scope{display:none;padding:8px 16px;gap:6px;overflow-x:auto}.scope>span:first-child{display:none}
  .top:focus-within .scope,.top:has(#q:not(:placeholder-shown)) .scope{display:flex}
  .tabs{display:flex;border-bottom:1px solid var(--line)}
@@ -538,13 +570,13 @@ JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
+const prefs={palette:root.dataset.palette,font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
 const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filter(b=>b.checked).map(b=>b.value);
 function table(list,msg){if(!list.length){const p=document.createElement("div");p.className="empty";
- if(msg.startsWith("No gists match")){p.className="empty art-empty";const i=new Image();i.src="/static/archive.webp";i.alt="";i.className="art";
+ if(msg.startsWith("No gists match")){p.className="empty art-empty";const i=new Image();i.src=`/static/archive-${root.dataset.palette}.webp`;i.alt="";i.className="art";
   const t=document.createElement("p");t.textContent=msg.replace("No gists match","Nothing in the stacks matches");p.append(i,t)}else p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
  c.className="t";c.textContent=g[2];
@@ -578,12 +610,13 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["font","size","theme","open"];
+const KEYS=["palette","font","size","theme","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
+const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
 function apply(p){root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
+ if(root.dataset.palette!==p.palette){root.dataset.palette=p.palette;document.querySelectorAll("img[data-art]").forEach(i=>i.src=`/static/${i.dataset.art}-${p.palette}.webp`)}
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
@@ -686,7 +719,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -737,6 +770,25 @@ def size_picker(name, current):
         f'<span class="dot d-{k}" aria-hidden=true></span></label>' for k, v in SIZES.items()) + '</span><span class="sb" aria-hidden=true>A</span></div>')
 
 
+def palette_cards(current):
+    """Colour theme picker: one mini page preview per theme (wash strip, nameplate, bars, rows)."""
+    bars = (3, 6, 2, 9, 4, 7, 12, 5, 8)
+    out = []
+    for k, p in PALETTES.items():
+        strip = "".join(f'<i style="background:{c}"></i>' for c in p["wash"])
+        bar = "".join(f'<b style="height:{h * 2}px;background:{p["accent"]};opacity:{1 if h == 12 else .5}"></b>' for h in bars)
+        rows = "".join(f'<u style="border-color:{p["rule"]}"><em style="color:{p["muted"]}">{t}</em>'
+                       f'<span style="color:{p["link"]}">{x}</span></u>' for t, x in (("12:02PM", "server setup spec"), ("04-Nov", "Lessons learned")))
+        out.append(
+            f'<label class="pcard"><input type=radio name=palette value={k}{" checked" if current == k else ""}>'
+            f'<span class="pv"><span class="pstrip">{strip}</span>'
+            f'<span class="ppage" style="background:{p["paper"]};color:{p["ink"]}">'
+            f'<span class="pname" style="border-color:{p["ink"]}"><strong>localgist</strong><span class="pbars">{bar}</span></span>{rows}</span>'
+            f'<span class="plabel">{p["name"]}<small>{p["note"]}</small></span></span></label>'
+        )
+    return f'<div class="pcards" role=radiogroup aria-label="Colour theme">{"".join(out)}</div>'
+
+
 def settings_dialog(prefs):
     def seg(name, options):
         return "".join(
@@ -756,7 +808,8 @@ def settings_dialog(prefs):
         f'<div class="m-head"><div id=m-title class="m-title">Display settings</div>'
         f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
         '<div class="m-body grid">'
-        f'<fieldset><legend>Theme</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
+        f'<fieldset class="wide"><legend>Colour theme</legend>{palette_cards(prefs["palette"])}</fieldset>'
+        f'<fieldset><legend>Light or dark</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
         f'<fieldset><legend>Text size</legend>{size_picker("size", prefs["size"])}</fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
@@ -772,7 +825,7 @@ def settings_dialog(prefs):
     )
 
 
-STATIC = {"masthead.webp", "archive.webp", "press.webp"}  # watercolours made by tools/watercolor.py
+STATIC = {f"{n}-{p}.webp" for n in ("masthead", "archive", "press") for p in PALETTES}  # watercolours by tools/watercolor.py
 STATIC_DIR = __file__.rsplit("/", 1)[0] + "/static/"
 
 
@@ -868,7 +921,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         "localgist",
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
-        '<figure class="masthead"><img class="art" src="/static/masthead.webp" width=2080 height=858 alt="">'
+        f'<figure class="masthead"><img class="art" data-art=masthead src="/static/masthead-{prefs["palette"]}.webp" width=2080 height=375 alt="">'
         '<figcaption class="credit">The Reading Room, Library of Congress, 1901. Watercolour after a Detroit Publishing Co. photochrom.</figcaption></figure>'
         f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
@@ -891,7 +944,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
         f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
         f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
-        f'<footer class="colophon"><img class="art" src="/static/press.webp" width=1000 height=620 alt="" loading=lazy>{CREDITS}</footer>'
+        f'<footer class="colophon"><img class="art" data-art=press src="/static/press-{prefs["palette"]}.webp" width=420 height=260 alt="" loading=lazy>{CREDITS}</footer>'
         f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
         f'<script type="application/json" id=d data-v="{html.escape(signature(held))}" data-csrf="{CSRF}">{search_data(items, field)}</script>',

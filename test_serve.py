@@ -272,9 +272,11 @@ finally:
 # page script must parse (a duplicate name once broke the whole page); needs node, skipped without it
 import shutil, tempfile
 if shutil.which("node"):
-    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
-        f.write(serve.JS)
-    r = subprocess.run(["node", "--check", f.name], capture_output=True, text=True)
+    with tempfile.TemporaryDirectory() as d:  # removed afterwards; one stray file per run used to pile up in $TMPDIR
+        js = f"{d}/page.js"
+        with open(js, "w") as f:
+            f.write(serve.JS)
+        r = subprocess.run(["node", "--check", js], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
 # CSP: only the shipped script, no inline scripts, images only from this server

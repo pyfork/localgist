@@ -20,9 +20,11 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Layout
 
-- Desktop: a centered 1180px page (not full width), two columns of 90 rows, then page 2.
+- Desktop: a centered card at most 1040px wide, with at least 32px of page showing on each side (never full width), two columns of 90 rows, then page 2.
 - Under 768px: full width, one column, sticky search and tabs, rows at least 48px tall.
-- Row: `09:12PM` if updated today, else `Nov-03`, then the description. Click to read the rendered Markdown.
+- Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
+- Row: `09:12PM` if today, else `Nov-03` (of the date you sort by), then the description. Click to read the rendered Markdown.
+- While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 
 ## Search
@@ -33,7 +35,7 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Resources
 
-Measured on this Mac with 262 gists: about 20 MB idle, about 29 MB peak while loading the list, about 1 s of CPU in total for the list plus 60 gist pages. Zero CPU while idle.
+Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (list fetched in parallel while the browser opens), about 20 MB idle, about 34 MB peak while loading the list, about 1 s of CPU in total for the list plus 60 gist pages. Zero CPU while idle.
 
 - Rendered gists in memory are capped at 50 (oldest dropped first).
 - Stalled connections are dropped after 30 s.

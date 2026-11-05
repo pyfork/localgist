@@ -20,6 +20,7 @@ import time
 import urllib.request
 import webbrowser
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
@@ -33,12 +34,18 @@ TOKEN = ""  # set in main()
 # CLOCK_UPTIME_RAW (macOS) and CLOCK_MONOTONIC (Linux) both pause while the machine sleeps
 CLOCK = getattr(time, "CLOCK_UPTIME_RAW", time.CLOCK_MONOTONIC)
 
+PER_PAGE = 30  # smaller pages come back much faster and are fetched in parallel
+STALE_SECONDS = 300
+CHECK_SECONDS = 60  # how often an open page may trigger a GitHub update check
+_checked = [0.0]
+
 _list = {"at": 0.0, "gists": []}
+_lock = threading.Lock()  # one list fetch at a time
 _pages = {}  # gist id -> (updated_at, rendered html)
 _last_hit = [time.clock_gettime(CLOCK)]
 
 
-def gh(path, body=None):
+def gh(path, body=None, with_headers=False):
     req = urllib.request.Request(
         API + path,
         data=json.dumps(body).encode() if body else None,
@@ -49,21 +56,85 @@ def gh(path, body=None):
         },
     )
     with urllib.request.urlopen(req, timeout=20) as r:
-        return r.read().decode()
+        text = r.read().decode()
+        return (text, r.headers) if with_headers else text
+
+
+def last_page(link):
+    m = re.search(r'[?&]page=(\d+)>; rel="last"', link or "")
+    return int(m[1]) if m else 1
+
+
+def fetch_all():
+    """Every gist, most recently updated first. GitHub takes ~2 s per 100-gist page but ~0.8 s per 30,
+    so read page 1 for the page count, then fetch the rest side by side."""
+    text, headers = gh(f"/gists?per_page={PER_PAGE}&page=1", with_headers=True)
+    pages = [json.loads(text)]
+    rest = range(2, last_page(headers.get("Link")) + 1)
+    with ThreadPoolExecutor(max_workers=8) as pool:  # map keeps page order
+        pages += pool.map(lambda p: json.loads(gh(f"/gists?per_page={PER_PAGE}&page={p}")), rest)
+    seen, out = set(), []
+    for g in (g for page in pages for g in page):  # a gist edited mid-fetch can shift pages: drop repeats
+        if g["id"] not in seen:
+            seen.add(g["id"])
+            out.append(g)
+    # GitHub lists gists by creation date; sort by last update so an edited gist comes to the top
+    return sorted(out, key=lambda g: g["updated_at"], reverse=True)
+
+
+def _load():
+    _list.update(at=time.time(), gists=fetch_all())
+
+
+def _load_in_background():
+    try:
+        _load()
+    except Exception as e:  # keep serving the old list; next stale request retries
+        print(f"localgist: background refresh failed: {e}", file=sys.stderr, flush=True)
+    finally:
+        _lock.release()
 
 
 def gists(refresh=False):
-    # shortcut: list cached 5 min in memory; add ?refresh=1 to force a reload
-    if refresh or time.time() - _list["at"] > 300:
-        out, page = [], 1
-        while True:
-            batch = json.loads(gh(f"/gists?per_page=100&page={page}"))
-            out += batch
-            if len(batch) < 100:
-                break
-            page += 1
-        _list.update(at=time.time(), gists=out)
+    """Only the very first load (or ↻) waits. A stale list is served at once and refreshed behind it."""
+    if refresh or not _list["at"]:
+        with _lock:
+            if refresh or not _list["at"]:  # the start-up warm-up may have filled it while we waited
+                _load()
+    elif time.time() - _list["at"] > STALE_SECONDS and _lock.acquire(blocking=False):
+        old = _list["gists"]
+        threading.Thread(target=_load_in_background, daemon=True).start()
+        return old
     return _list["gists"]
+
+
+def signature(items):
+    """Changes when a gist is added, edited (it moves to the top) or deleted (count drops)."""
+    return f'{len(items)}-{items[0]["id"]}-{items[0]["updated_at"]}' if items else "0"
+
+
+def _check_for_update():
+    try:
+        cur = _list["gists"]
+        if not cur:
+            return _load()
+        # one tiny call: only gists updated at or after our newest one come back
+        newer = json.loads(gh(f'/gists?per_page=5&since={cur[0]["updated_at"]}'))
+        if any((g["id"], g["updated_at"]) != (cur[0]["id"], cur[0]["updated_at"]) for g in newer):
+            _load()
+    except Exception as e:
+        print(f"localgist: update check failed: {e}", file=sys.stderr, flush=True)
+    finally:
+        _lock.release()
+
+
+def version():
+    """Signature of the list the server holds now. Checks GitHub at most once a minute,
+    and only while a page is open and asking (the browser polls /version)."""
+    if time.time() - _checked[0] > CHECK_SECONDS and _lock.acquire(blocking=False):
+        _checked[0] = time.time()
+        threading.Thread(target=_check_for_update, daemon=True).start()
+    return signature(_list["gists"])
 
 
 def stamp(iso, now=None):
@@ -91,9 +162,9 @@ def title(g):
     return g.get("description") or next(iter(g["files"]), g["id"])
 
 
-def search_data(items):
+def search_data(items, field="updated_at"):
     """[id, stamp, title, lowercase haystack] per gist, safe to embed in a <script> block."""
-    rows = [[g["id"], stamp(g["updated_at"]), title(g), " ".join([title(g), *g["files"]]).lower()] for g in items]
+    rows = [[g["id"], stamp(g[field]), title(g), " ".join([title(g), *g["files"]]).lower()] for g in items]
     return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
 
 
@@ -110,7 +181,7 @@ html{background:var(--page)}
 body{margin:0;background:var(--page);color:var(--fg);font:12.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
-.wrap{max-width:1180px;margin:32px auto 48px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:clip}
+.wrap{width:min(1040px,100% - 64px);margin:32px auto 48px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:clip}
 header{display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--line)}
 .brand{font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--fg)}.brand:visited{color:var(--fg)}
 .search{position:relative;flex:1;max-width:440px}
@@ -125,6 +196,10 @@ kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-mono
 .meta nav{display:flex;gap:4px;align-items:center}
 .meta nav a,.meta nav b{min-width:24px;height:24px;display:inline-grid;place-items:center;border-radius:6px;padding:0 6px}
 .meta nav b{background:var(--fg);color:var(--surface);font-weight:600}
+.sort{display:inline-flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px;flex:none}
+.sort a,.sort b{height:28px;padding:0 11px;display:inline-grid;place-items:center;border-radius:6px;font-size:12px;font-weight:500;color:var(--muted)}
+.sort a:visited{color:var(--muted)}.sort a:hover{color:var(--fg);text-decoration:none;background:var(--hover)}
+.sort b{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .meta nav a:hover{background:var(--hover);text-decoration:none}
 input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
@@ -136,12 +211,19 @@ tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
 td.t{width:66px;padding-left:4px;color:var(--faint);font-variant-numeric:tabular-nums;font-size:11.5px;padding-top:4px}
 .empty{color:var(--muted);padding:14px 0;margin:0}
+.toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font:600 13px/1.2 inherit;font-family:inherit;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#3ccf7a}
+.toast:hover{filter:brightness(1.1)}.toast:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+@keyframes rise{from{opacity:0;translate:-50% 8px}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+@media (max-width:767px){.toast{bottom:16px;width:calc(100% - 32px);justify-content:center}}
 @media (max-width:767px){
  body{font-size:14px}
- .wrap{margin:0;border:0;border-radius:0;box-shadow:none;min-height:100vh}
+ .wrap{width:auto;margin:0;border:0;border-radius:0;box-shadow:none;min-height:100vh}
  .top{position:sticky;top:0;z-index:2;background:var(--surface)}
  header{flex-wrap:wrap;gap:10px 12px;padding:12px 16px}
- .search{order:3;flex-basis:100%;max-width:none}.search input{height:40px;font-size:16px}
+ .search{order:3;flex:1 1 140px;max-width:none}.search input{height:40px;font-size:16px;padding-right:10px}
+ .sort{order:4}.sort a,.sort b{height:34px;padding:0 10px;font-size:13px}
  kbd{display:none}
  .tabs{display:flex;border-bottom:1px solid var(--line)}
  .tabs label{flex:1;text-align:center;padding:11px 0;font-weight:600;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;font-variant-numeric:tabular-nums}
@@ -184,10 +266,15 @@ q.addEventListener("keydown",e=>{if(e.key==="Escape"){q.value="";run();q.blur()}
  else if(e.key==="Enter"&&q.value.trim()){const a=document.querySelector("main a");if(a)location.href=a.getAttribute("href")}});
 document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="f"&&document.activeElement!==q){e.preventDefault();q.focus();q.select()}});
 if(!/Mac|iPhone|iPad/.test(navigator.platform))$("k").textContent="Ctrl F";
-if(q.value)run()})();"""
+if(q.value)run();
+// New-content check: ask the server every 60 s while the tab is visible, and right away when it comes back into view.
+const V=$("d").dataset.v,u=$("upd");
+const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
+setInterval(check,60000);document.addEventListener("visibilitychange",check);
+u.addEventListener("click",()=>location.reload())})();"""
 JS_HASH = "sha256-" + base64.b64encode(hashlib.sha256(JS.encode()).digest()).decode()
 CSP = (
-    f"default-src 'none'; script-src '{JS_HASH}'; style-src 'unsafe-inline'; img-src https: data:; "
+    f"default-src 'none'; script-src '{JS_HASH}'; style-src 'unsafe-inline'; img-src https: data:; connect-src 'self'; "
     "frame-ancestors 'none'; form-action 'none'; base-uri 'none'"
 )
 
@@ -202,26 +289,45 @@ def shell(name, body, script=False):
     )
 
 
-def rows(items):
+def rows(items, field="updated_at"):
     if not items:
         return '<p class="empty">No more gists.</p>'
     trs = "".join(
-        f'<tr><td class="t">{stamp(g["updated_at"])}</td>'
+        f'<tr><td class="t">{stamp(g[field])}</td>'
         f'<td><a href="/g/{g["id"]}" title="{html.escape(title(g))}">{html.escape(title(g))}</a></td></tr>'
         for g in items
     )
     return f"<table>{trs}</table>"
 
 
-def index_page(page, refresh):
-    items = gists(refresh)
+SORTS = {"updated": "Updated", "created": "Created"}  # first one is the default
+
+
+def sort_items(items, sort):
+    """The cached list is already by last update; 'created' re-sorts a copy."""
+    if sort == "created":
+        return sorted(items, key=lambda g: g["created_at"], reverse=True)
+    return items
+
+
+def index_page(page, refresh, sort="updated"):
+    sort = sort if sort in SORTS else "updated"
+    field = f"{sort}_at"
+    held = gists(refresh)  # the update check compares against this list, whatever the sort
+    items = sort_items(held, sort)
+    qs = "" if sort == "updated" else f"&sort={sort}"
     pages = max(1, -(-len(items) // (2 * ROWS)))
     page = min(max(page, 1), pages)
     left, right = columns(items, page)
     base = (page - 1) * 2 * ROWS
     r1, r2 = span(base, len(left)), span(base + ROWS, len(right))
     nav = "".join(
-        f'<b aria-current="page">{p}</b>' if p == page else f'<a href="/?p={p}">{p}</a>' for p in range(1, pages + 1)
+        f'<b aria-current="page">{p}</b>' if p == page else f'<a href="/?p={p}{qs}">{p}</a>' for p in range(1, pages + 1)
+    )
+    seg = "".join(
+        f'<b aria-current="true">{label}</b>' if key == sort
+        else f'<a href="/{"" if key == "updated" else "?sort=" + key}">{label}</a>'
+        for key, label in SORTS.items()
     )
     return shell(
         "localgist",
@@ -230,12 +336,14 @@ def index_page(page, refresh):
         '<div class="top"><header><a class="brand" href="/">localgist</a>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
+        f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
-        f'<nav id=pg aria-label="Pages">{nav}<a href="/?p={page}&refresh=1" title="Reload from GitHub">↻</a></nav></div></header>'
+        f'<nav id=pg aria-label="Pages">{nav}<a href="/?p={page}{qs}&refresh=1" title="Reload from GitHub">↻</a></nav></div></header>'
         f'<div class="tabs"><label for=t1 id=l1>{r1}</label><label for=t2 id=l2>{r2}</label></div></div>'
-        f'<main><section class="c1"><h2><span>Gists</span><span id=h1>{r1}</span></h2><div id=r1>{rows(left)}</div></section>'
-        f'<section class="c2"><h2><span>Gists</span><span id=h2>{r2}</span></h2><div id=r2>{rows(right)}</div></section></main>'
-        f'<script type="application/json" id=d>{search_data(items)}</script>',
+        f'<main><section class="c1"><h2><span>Gists</span><span id=h1>{r1}</span></h2><div id=r1>{rows(left, field)}</div></section>'
+        f'<section class="c2"><h2><span>Gists</span><span id=h2>{r2}</span></h2><div id=r2>{rows(right, field)}</div></section></main>'
+        '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
+        f'<script type="application/json" id=d data-v="{html.escape(signature(held))}">{search_data(items, field)}</script>',
         script=True,
     )
 
@@ -285,6 +393,8 @@ class Handler(BaseHTTPRequestHandler):
         if not host_ok(self.headers.get("Host", "")):  # blocks DNS-rebinding pages
             return self.send(403, "forbidden", "text/plain")
         url = urlsplit(self.path)
+        if url.path == "/version":  # polled by an open page; does not count as use, so idle stop still works
+            return self.send(200, version(), "text/plain")
         if url.path == "/ping":  # lets a second `pyup` find this server; does not count as use
             return self.send(200, "localgist", "text/plain")
         _last_hit[0] = time.clock_gettime(CLOCK)
@@ -292,7 +402,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if url.path == "/":
                 p = q.get("p", ["1"])[0]
-                return self.send(200, index_page(int(p) if p.isdigit() else 1, "refresh" in q))
+                return self.send(200, index_page(int(p) if p.isdigit() else 1, "refresh" in q, q.get("sort", ["updated"])[0]))
             m = re.fullmatch(r"/g/([0-9a-f]{1,64})", url.path)
             if m:
                 return self.send(200, gist_page(m[1]))
@@ -307,6 +417,13 @@ def watch_idle(server):
         if time.clock_gettime(CLOCK) - _last_hit[0] > IDLE_SECONDS:
             server.shutdown()
             return
+
+
+def warm():
+    try:
+        gists()
+    except Exception as e:  # the first page request will retry and show the error
+        print(f"localgist: warm-up failed: {e}", file=sys.stderr, flush=True)
 
 
 def running_port():
@@ -346,6 +463,7 @@ def main():
     server = bind()
     PORT = server.server_address[1]  # host_ok() checks against the port actually bound
     threading.Thread(target=watch_idle, args=(server,), daemon=True).start()
+    threading.Thread(target=warm, daemon=True).start()  # list loads while the browser opens
     print(f"localgist on http://localhost:{PORT} (stops after 60 min idle)", flush=True)
     if want_open:
         webbrowser.open(f"http://localhost:{PORT}")

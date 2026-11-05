@@ -225,7 +225,7 @@ FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"} 
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
 SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is the default
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
-# Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the watercolour wash shown on the card.
+# Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the three-colour strip shown at the top.
 PALETTES = {
     "finviz": {"name": "Finviz", "note": "White, light or dark", "paper": "#ffffff", "ink": "#1e222d", "accent": "#2f6bd1", "link": "#1d4ea8", "rule": "#e7e9ee", "muted": "#6b7280", "wash": ("#2f6bd1", "#8fa3c2", "#e7ebf2")},
     "cover": {"name": "Cover Ink", "note": "New Yorker cover feel", "paper": "#f7f1e3", "ink": "#1a1a1a", "accent": "#b8401c", "link": "#26457a", "rule": "#e7dcc4", "muted": "#6b6355", "wash": ("#3f63a8", "#d4683f", "#efe2c6")},
@@ -233,9 +233,8 @@ PALETTES = {
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
 }
-ARTS = {"image": "Watercolour", "strip": "Colour strip only"}  # first one is the default
-DEFAULT_PREFS = {"palette": "finviz", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("palette", "art", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
+DEFAULT_PREFS = {"palette": "finviz", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("palette", "font", "size", "theme", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -252,8 +251,6 @@ def read_prefs(cookie_header):
             p["size"] = z
         if (pl := q.get("palette", [""])[0]) in PALETTES:
             p["palette"] = pl
-        if (ar := q.get("art", [""])[0]) in ARTS:
-            p["art"] = ar
         if (th := q.get("theme", [""])[0]) in THEMES:
             p["theme"] = th
         if (o := q.get("open", [""])[0]) in OPENS:
@@ -312,25 +309,25 @@ def search_data(items, field="updated_at"):
 
 
 DARK = ("color-scheme:dark;--page:#0f1012;--surface:#17181b;--fg:#ece6d8;--muted:#a59e8f;--faint:#746e62;--line:#2a2b2f;--rule:#ece6d8;"
-        "--link:#a9c1e6;--seen:#c9b3ea;--hover:#1f2024;--field:#121315;--field-line:#34363b;--focus:#7aa2e3;--kbd:#1f2024;--accent:#8fb0dc;--credit-bg:rgb(23 24 27 / .82);"
+        "--link:#a9c1e6;--seen:#c9b3ea;--hover:#1f2024;--field:#121315;--field-line:#34363b;--focus:#7aa2e3;--kbd:#1f2024;--accent:#8fb0dc;"
         "--shadow:0 1px 2px rgb(0 0 0 / .4),0 12px 32px rgb(0 0 0 / .35);--pop:0 16px 48px rgb(0 0 0 / .55),0 2px 6px rgb(0 0 0 / .4)")
 
 CSS = """
 :root{color-scheme:light;
  --page:#ebe5d8;--surface:#fbf8f1;--fg:#1d1b16;--muted:#6a6356;--faint:#968e7e;--line:#e6dfd0;--rule:#1d1b16;
- --link:#1f3a5f;--seen:#5b4a7a;--hover:#f4efe3;--field:#f5f0e5;--field-line:#d8cfbc;--focus:#2f5f9e;--kbd:#fbf8f1;--accent:#2f4b73;--credit-bg:rgb(251 248 241 / .85);--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
+ --link:#1f3a5f;--seen:#5b4a7a;--hover:#f4efe3;--field:#f5f0e5;--field-line:#d8cfbc;--focus:#2f5f9e;--kbd:#fbf8f1;--accent:#2f4b73;--shadow:0 1px 2px rgb(16 24 40 / .05),0 8px 24px rgb(16 24 40 / .06);
  --pop:0 12px 40px rgb(16 24 40 / .16),0 2px 6px rgb(16 24 40 / .08)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){DARK}}
 :root[data-theme=dark]{DARK}
 html{--w1:#7c95b8;--w2:#c8a874;--w3:#e9e2d0}
 html[data-palette=cover]{--w1:#3f63a8;--w2:#d4683f;--w3:#efe2c6}html[data-palette=sage]{--w1:#8fa682;--w2:#c9a95e;--w3:#e6e8dd}html[data-palette=night]{--w1:#3e5578;--w2:#8a7350;--w3:#3a3d44}
-html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c;--credit-bg:rgb(247 241 227 / .85)}
-html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741;--credit-bg:rgb(243 244 238 / .85)}
+html[data-palette=cover]{--page:#ece2cc;--surface:#f7f1e3;--fg:#1a1a1a;--muted:#6b6355;--faint:#978d7b;--line:#e7dcc4;--rule:#1a1a1a;--link:#26457a;--seen:#6a3f6b;--hover:#f0e7d3;--field:#f2e9d7;--field-line:#d8caac;--kbd:#f7f1e3;--accent:#b8401c}
+html[data-palette=sage]{--page:#e4e7dc;--surface:#f3f4ee;--fg:#22261f;--muted:#5f6658;--faint:#8c9285;--line:#dfe3d6;--rule:#22261f;--link:#35553a;--seen:#5a4a6e;--hover:#eceee5;--field:#eef0e8;--field-line:#cdd2c1;--kbd:#f3f4ee;--accent:#4a6741}
 html[data-palette=night]{DARK;--accent:#d3ad7a}
-html[data-palette=finviz]{--page:#f3f4f6;--surface:#ffffff;--fg:#1e222d;--muted:#6b7280;--faint:#9aa0ab;--line:#e7e9ee;--rule:#1e222d;--link:#1d4ea8;--seen:#6b3fa0;--hover:#f3f6fb;--field:#f5f6f8;--field-line:#d7dbe1;--kbd:#ffffff;--accent:#2f6bd1;--credit-bg:rgb(255 255 255 / .85);--w1:#2f6bd1;--w2:#8fa3c2;--w3:#e7ebf2}
+html[data-palette=finviz]{--page:#f3f4f6;--surface:#ffffff;--fg:#1e222d;--muted:#6b7280;--faint:#9aa0ab;--line:#e7e9ee;--rule:#1e222d;--link:#1d4ea8;--seen:#6b3fa0;--hover:#f3f6fb;--field:#f5f6f8;--field-line:#d7dbe1;--kbd:#ffffff;--accent:#2f6bd1;--w1:#2f6bd1;--w2:#8fa3c2;--w3:#e7ebf2}
 html[data-palette=finviz] .nameplate h1,html[data-palette=finviz] h2{font-family:var(--ff);letter-spacing:-.01em}  /* Finviz is all sans */
-@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--credit-bg:rgb(34 38 47 / .85);--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}}
-:root[data-theme=dark][data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--credit-bg:rgb(34 38 47 / .85);--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}}
+:root[data-theme=dark][data-palette=finviz]{--page:#191c23;--surface:#22262f;--fg:#dbdee6;--muted:#9aa1b0;--faint:#6f7686;--line:#333845;--rule:#dbdee6;--link:#8cb4ff;--seen:#c3a6f0;--hover:#2a2f3a;--field:#1b1e25;--field-line:#3a4050;--kbd:#2a2f3a;--accent:#4f8ff7;--w1:#4f8ff7;--w2:#4a5a78;--w3:#2a2f3a}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-palette=cover]{--accent:#e48a62}:root:not([data-theme=light])[data-palette=sage]{--accent:#9cbf8f}:root:not([data-theme=light])[data-palette=night]{--accent:#d3ad7a}}
 :root[data-theme=dark][data-palette=cover]{--accent:#e48a62}:root[data-theme=dark][data-palette=sage]{--accent:#9cbf8f}:root[data-theme=dark][data-palette=night]{--accent:#d3ad7a}
 html{--ff:Arial,"Helvetica Neue",sans-serif;--fs:12.5px;--serif:Georgia,"Iowan Old Style","Times New Roman",serif}
@@ -432,14 +429,8 @@ input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
 h2{margin:14px 0 2px;padding:8px 0 6px;border-top:3px solid var(--rule);border-bottom:1px solid var(--line);font:700 18px/1.15 var(--serif);letter-spacing:-.01em}
-.masthead{position:relative;margin:0;border-bottom:1px solid var(--line)}
-.strip{display:none;height:8px}.strip i{flex:1}
+.strip{display:flex;height:8px}.strip i{flex:1}
 .strip i:nth-child(1){background:var(--w1)}.strip i:nth-child(2){background:var(--w2)}.strip i:nth-child(3){background:var(--w3)}
-html[data-art=strip] .masthead img,html[data-art=strip] .credit,html[data-art=strip] .colophon img,html[data-art=strip] .art-empty img{display:none}
-html[data-art=strip] .strip{display:flex}html[data-art=strip] .masthead{border-bottom:0}
-html[data-art=strip] .colophon{display:none}
-.masthead img{display:block;width:100%;height:110px;object-fit:cover;object-position:50% 42%}  /* art stays a garnish: never taller than 110px */
-.credit{position:absolute;right:10px;bottom:6px;margin:0;padding:1px 7px;font:italic 10.5px/1.4 var(--serif);color:var(--muted);background:var(--credit-bg);border-radius:2px}
 .nameplate{display:grid;grid-template-columns:1fr auto;align-items:end;gap:28px;padding:14px 24px 12px;border-bottom:3px double var(--rule)}
 .nameplate h1{margin:0;font:700 40px/.95 var(--serif);letter-spacing:-.03em}
 .dateline{margin:10px 0 0;font:italic 14px/1.3 var(--serif);color:var(--muted)}
@@ -470,15 +461,7 @@ html[data-art=strip] .colophon{display:none}
 .chart text{font:10px var(--serif);fill:var(--muted)}.chart .ann{font-style:italic;fill:var(--fg)}
 .chart line{stroke:var(--rule);stroke-width:1}
 header .brand{display:none}
-.art-empty{padding:28px 0 8px;text-align:center}
-.art-empty img{display:block;max-height:110px;width:auto;max-width:90%;margin:0 auto 12px}
-.art-empty p{margin:0;font:italic 16px/1.4 var(--serif);color:var(--muted)}
-.colophon{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:22px 24px 26px;border-top:3px double var(--rule);font:italic 13px/1.6 var(--serif);color:var(--muted)}
-.colophon img{display:block;height:110px;width:auto}
-.colophon p{margin:0}.colophon b{font-style:normal;color:var(--fg)}
-.colophon a{color:inherit;text-decoration:underline;text-decoration-color:var(--field-line)}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .art{filter:brightness(.8) contrast(1.06)}}
-:root[data-theme=dark] .art{filter:brightness(.8) contrast(1.06)}
+.empty.quiet{padding:28px 0 8px;text-align:center;font:italic 16px/1.4 var(--serif)}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
@@ -544,15 +527,12 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  #t1:checked~.top label[for=t1],#t2:checked~.top label[for=t2]{color:var(--fg);border-color:var(--fg)}
  #t1:focus-visible~.top label[for=t1],#t2:focus-visible~.top label[for=t2]{outline:2px solid var(--focus);outline-offset:-2px}
  main{display:block;padding:0 16px 32px}h2{display:none}
- .masthead img{height:90px}
- .credit{position:static;display:block;padding:6px 16px;font-size:10.5px;background:none;border-radius:0}
  header .meta{flex:1 1 auto;justify-content:space-between}
  header .search{flex:1 1 180px}
  .nameplate{grid-template-columns:1fr;gap:14px;padding:14px 16px 14px}
  .nameplate h1{font-size:36px}
  .chart-wrap{justify-items:stretch}.chart{width:100%;height:auto}.period{width:100%}.overview{flex:1;width:auto;height:28px}.grip{width:18px}.preset{width:28px;height:28px}
  .scope .mchip{display:inline-flex}
- .colophon{grid-template-columns:1fr;padding:18px 16px 24px}.colophon img{height:auto;max-height:110px;width:auto;max-width:100%}
  .c2,#t2:checked~main .c1{display:none}#t2:checked~main .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -592,14 +572,13 @@ JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={palette:root.dataset.palette,art:root.dataset.art,font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
+const prefs={palette:root.dataset.palette,font:root.dataset.font,size:root.dataset.size,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
 const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filter(b=>b.checked).map(b=>b.value);
 function table(list,msg){if(!list.length){const p=document.createElement("div");p.className="empty";
- if(msg.startsWith("No gists match")){p.className="empty art-empty";const i=new Image();i.src=`/static/archive-${root.dataset.palette}.webp`;i.alt="";i.className="art";
-  const t=document.createElement("p");t.textContent=msg.replace("No gists match","Nothing in the stacks matches");p.append(i,t)}else p.textContent=msg;return p}
+ if(msg.startsWith("No gists match")){p.className="empty quiet";p.textContent=msg.replace("No gists match","Nothing matches")}else p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
  c.className="t";c.textContent=g[2];
  a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a);
@@ -632,13 +611,12 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["palette","art","font","size","theme","open"];
+const KEYS=["palette","font","size","theme","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({palette:pick("palette"),art:pick("art"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
+const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function apply(p){root.dataset.art=p.art;root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
- if(root.dataset.palette!==p.palette){root.dataset.palette=p.palette;document.querySelectorAll("img[data-art]").forEach(i=>i.src=`/static/${i.dataset.art}-${p.palette}.webp`)}
+function apply(p){root.dataset.palette=p.palette;root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
@@ -742,7 +720,7 @@ u.addEventListener("click",()=>location.reload())})();"""
 JS_HASH = "sha256-" + base64.b64encode(hashlib.sha256(JS.encode()).digest()).decode()
 CSP = (
     f"default-src 'none'; script-src '{JS_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; "
-    "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; "
+    "font-src https://fonts.gstatic.com; img-src 'none'; connect-src 'self'; "
     "frame-ancestors 'none'; form-action 'none'; base-uri 'none'"
 )
 
@@ -750,7 +728,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-art="{prefs["art"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-size="{prefs["size"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -840,8 +818,6 @@ def settings_dialog(prefs):
         f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
         '<div class="m-body grid">'
         f'<fieldset class="wide"><legend>Colour theme</legend>{palette_cards(prefs["palette"])}</fieldset>'
-        f'<fieldset><legend>Header art</legend><div class="seg">{seg("art", ARTS)}</div>'
-        '<p class="hint">Colour strip only shows a thin band of the theme colours, no pictures.</p></fieldset>'
         f'<fieldset><legend>Light or dark</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
         f'<fieldset><legend>Text size</legend>{size_picker("size", prefs["size"])}</fieldset>'
@@ -858,8 +834,6 @@ def settings_dialog(prefs):
     )
 
 
-STATIC = {f"{n}-{p}.webp" for n in ("masthead", "archive", "press") for p in PALETTES}  # watercolours by tools/watercolor.py
-STATIC_DIR = __file__.rsplit("/", 1)[0] + "/static/"
 
 
 def month_counts(items, months=24, now=None):
@@ -915,15 +889,6 @@ def month_chart(items, now=None):
     )
 
 
-CREDITS = (
-    '<p><b>Illustrations</b> are watercolour renderings, made with OpenCV, of public-domain photographs: '
-    '<a href="https://commons.wikimedia.org/wiki/File:Reading_room,_Library_of_Congress,_Washington,_D.C.,_1901.jpg" rel="noreferrer">'
-    'Reading Room, Library of Congress, 1901</a> (Detroit Publishing Co.); '
-    '<a href="https://commons.wikimedia.org/wiki/File:Card_Division_of_the_Library_of_Congress_3c18631u_original.jpg" rel="noreferrer">'
-    'Card Division, Library of Congress, c. 1900\u201320</a>; '
-    '<a href="https://commons.wikimedia.org/wiki/File:Herald-composing-1902.jpg" rel="noreferrer">'
-    'Composing room, New York Herald, 1902</a> (George Grantham Bain Collection).</p>'
-)
 
 
 def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
@@ -954,9 +919,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         "localgist",
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
         '<input type=radio name=t id=t2 aria-label="Show second column">'
-        f'<figure class="masthead"><img class="art" data-art=masthead src="/static/masthead-{prefs["palette"]}.webp" width=2080 height=375 alt="">'
-        '<span class="strip" aria-hidden=true><i></i><i></i><i></i></span>'
-        '<figcaption class="credit">The Reading Room, Library of Congress, 1901. Watercolour after a Detroit Publishing Co. photochrom.</figcaption></figure>'
+        '<div class="strip" aria-hidden=true><i></i><i></i><i></i></div>'
         f'<div class="nameplate"><div><h1>localgist</h1><p class="dateline">{datetime.now(MYT):%A}, {datetime.now(MYT).day} '
         f'{datetime.now(MYT):%B %Y} \u00b7 {len(items)} gists \u00b7 Kuala Lumpur</p></div>'
         f'<figure class="chart-wrap" data-months="{html.escape(json.dumps(months))}">'
@@ -980,7 +943,6 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
         f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
         f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
-        f'<footer class="colophon"><img class="art" data-art=press src="/static/press-{prefs["palette"]}.webp" width=420 height=260 alt="" loading=lazy>{CREDITS}</footer>'
         f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
         f'<script type="application/json" id=d data-v="{html.escape(signature(held))}" data-csrf="{CSRF}">{search_data(items, field)}</script>',
@@ -1010,8 +972,6 @@ class Handler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         if url.path == "/version":  # polled by an open page; does not count as use, so idle stop still works
             return self.send(200, version(), "text/plain")
-        if url.path.startswith("/static/") and url.path[8:] in STATIC:  # fixed list: no path tricks
-            return self.send_static(url.path[8:])
         if url.path == "/ping":  # lets a second `pyup` find this server; does not count as use
             return self.send(200, "localgist", "text/plain")
         _last_hit[0] = time.clock_gettime(CLOCK)
@@ -1027,17 +987,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, "not found", "text/plain")
         except Exception as e:  # GitHub down, token expired, etc.
             return self.send(502, shell("error", f"<p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p>"))
-
-    def send_static(self, name):
-        with open(STATIC_DIR + name, "rb") as f:
-            data = f.read()
-        self.send_response(200)
-        self.send_header("Content-Type", "image/webp")
-        self.send_header("Content-Length", str(len(data)))
-        self.send_header("Cache-Control", "max-age=86400")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.end_headers()
-        self.wfile.write(data)
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools

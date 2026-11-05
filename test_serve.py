@@ -38,19 +38,19 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"palette": "finviz", "art": "image", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs(None) == {"palette": "finviz", "font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
 assert serve.read_prefs("lg=palette%3Dsage")["palette"] == "sage" and serve.read_prefs("lg=palette%3Devil")["palette"] == "finviz"
 assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
-    {"palette": "finviz", "art": "image", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
+    {"palette": "finviz", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"palette": "sage", "art": "strip", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
-assert 'data-art="strip"' in page and 'name=art value=strip checked' in page and '<span class="strip"' in page
-assert 'data-palette="sage"' in page and '/static/masthead-sage.webp' in page and 'name=palette value=sage checked' in page
+page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
+assert '<div class="strip"' in page and "<img" not in page and "/static/" not in page
+assert 'data-palette="sage"' in page and 'name=palette value=sage checked' in page
 assert page.count('class="pcard"') == len(serve.PALETTES) == 5
 assert 'data-size="l" data-theme="dark"' in page
 assert 'name=hsize value=l aria-label="Large text" checked' in page and 'name=size value=l aria-label="Large text" checked' in page
@@ -197,11 +197,11 @@ if shutil.which("node"):
 # CSP: only the shipped script, no inline scripts, images only from this server
 assert serve.JS_HASH == "sha256-" + base64.b64encode(hashlib.sha256(serve.JS.encode()).digest()).decode()
 assert "'unsafe-inline'" not in serve.CSP.split("script-src")[1].split(";")[0]
-assert "img-src 'self' data:" in serve.CSP
+assert "img-src 'none'" in serve.CSP
 
 # public repo: nothing but code may ever be tracked
 tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True, cwd=serve.__file__.rsplit("/", 1)[0]).stdout.split()
-allowed = {"README.md", "serve.py", "test_serve.py", ".gitignore", "tools/watercolor.py"} | {f"static/{n}" for n in serve.STATIC}
+allowed = {"README.md", "serve.py", "test_serve.py", ".gitignore"}
 assert set(tracked) <= allowed, tracked
 
 # theme: monthly chart counts and labels the busiest month

@@ -547,7 +547,7 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  td.t{width:68px;padding:10px 8px 0 4px;font-size:12px}
  td.act{display:none}  /* copy and delete are desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
- .totop{right:16px;bottom:16px;width:44px;height:44px}
+ .totop{right:16px;bottom:16px;width:48px;height:48px}.totop .hi{width:24px;height:24px}  /* 48px: Apple and Google tap minimums */
 }
 """
 

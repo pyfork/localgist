@@ -402,10 +402,13 @@ tr:hover .ib,tr:focus-within .ib,.ib:focus-visible{opacity:1}
 .ib:hover{background:var(--surface);color:var(--fg)}.ib.del:hover{color:#c62828}
 .ib.done{opacity:1;color:#1f8a4c}
 @media (hover:none){.ib{opacity:.7}}
-dialog.modal.small{width:min(380px,calc(100% - 32px))}
-.m-body.left{text-align:left;padding:16px 20px 14px}
-.c-name{margin:0 0 6px;font-weight:600;font-size:14px;overflow-wrap:anywhere}
-.c-err{margin:10px 0 0;color:#c62828;font-size:12.5px}
+td.act{position:relative}
+tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
+.rc{position:absolute;right:0;top:0;bottom:0;z-index:1;display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;white-space:nowrap;
+ background:linear-gradient(90deg,transparent,color-mix(in srgb,#c62828 9%,var(--surface)) 10px)}
+.rc-q{font-weight:600;color:#c62828;font-size:12px}
+.rc button{height:20px;padding:0 9px;border-radius:5px;font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
+.rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
 .stepper{display:inline-flex;align-items:center;gap:12px}
 .stepper button{width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:8px;background:var(--field);color:var(--fg);cursor:pointer}
@@ -442,7 +445,7 @@ dialog.modal.small{width:min(380px,calc(100% - 32px))}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
- td.act{width:60px;padding-top:6px}.ib{width:28px;height:30px}td.cm{padding-top:10px}
+ td.act{width:60px;padding-top:6px}.ib{width:28px;height:30px}.rc button{height:30px;padding:0 12px;font-size:13px}td.cm{padding-top:10px}
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
 """
@@ -549,19 +552,26 @@ let noteT;const note=$("note"),say=m=>{note.textContent=m;note.hidden=false;clea
 // clipboard API first; the old execCommand path covers browsers that refuse it
 const copyText=t=>(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{const a=document.createElement("textarea");
  a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.append(a);a.select();const ok=document.execCommand("copy");a.remove();if(!ok)throw new Error("copy")});
-const cf=$("confirm"),cyes=$("c-yes"),cerr=$("c-err");let target=null;
+// Delete asks right in the row: "Delete for good? Yes / No". No is focused; Esc or clicking elsewhere also means No.
+let pending=null;
+function cancel(){if(!pending)return;const{tr,box,btn}=pending;box.remove();tr.classList.remove("confirming");pending=null;btn.focus()}
+function askDelete(btn){cancel();const tr=btn.closest("tr");const box=$("confirm-tpl").content.firstElementChild.cloneNode(true);
+ btn.parentElement.append(box);tr.classList.add("confirming");pending={tr,box,btn,id:btn.dataset.id,name:tr.querySelector("a").textContent};box.querySelector(".rc-no").focus()}
+function confirmDelete(){const o=pending;if(!o)return;const yes=o.box.querySelector(".rc-yes"),qq=o.box.querySelector(".rc-q");
+ o.box.querySelectorAll("button").forEach(b=>b.disabled=true);qq.textContent="Deleting\u2026";
+ fetch("/api/gists/"+encodeURIComponent(o.id),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf}}).then(r=>r.ok?r.json():r.text().then(t=>{throw new Error(t||r.status)}))
+ .then(j=>{V=j.v;pending=null;drop(o.id);say(`Deleted \u201c${o.name}\u201d`)})
+ .catch(()=>{qq.textContent="Failed. Retry?";o.box.querySelectorAll("button").forEach(b=>b.disabled=false);yes.focus()})}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&pending){e.preventDefault();cancel()}});
+document.addEventListener("click",e=>{if(pending&&!pending.box.contains(e.target)&&!e.target.closest(".ib.del"))cancel()});
 document.querySelector("main").addEventListener("click",e=>{const b=e.target.closest(".ib");if(!b)return;
  if(b.classList.contains("copy")){copyText(b.dataset.u).then(()=>{const old=b.innerHTML;b.innerHTML=$("ok-icon").innerHTML;b.classList.add("done");say("Link copied");
   setTimeout(()=>{b.innerHTML=old;b.classList.remove("done")},1400)},()=>say("Could not copy"));return}
- target=b.dataset.id;$("c-name").textContent=b.closest("tr").querySelector("a").textContent;cerr.hidden=true;cyes.disabled=false;cyes.textContent="Yes, delete";cf.showModal();$("c-no").focus()});
-$("c-no").addEventListener("click",()=>cf.close());
+ askDelete(b)});
+document.querySelector("main").addEventListener("click",e=>{if(e.target.closest(".rc-no"))cancel();else if(e.target.closest(".rc-yes"))confirmDelete()});
 function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());
  for(let i=0;i<keep.length;i++){const t=document.createElement("div");t.innerHTML=keep[i];t.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());keep[i]=t.innerHTML}
  const k=D.findIndex(g=>g[0]===id);if(k>=0)D.splice(k,1);keepCnt=`${D.length} gists`;if(!q.value.trim())cnt.textContent=keepCnt;q.placeholder=`Search ${D.length} gists`}
-cyes.addEventListener("click",()=>{if(!target)return;cyes.disabled=true;cyes.textContent="Deleting…";
- fetch("/api/gists/"+encodeURIComponent(target),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf}}).then(r=>r.ok?r.json():r.text().then(t=>{throw new Error(t||r.status)}))
- .then(j=>{V=j.v;const name=$("c-name").textContent;drop(target);cf.close();say(`Deleted \u201c${name}\u201d`);target=null})
- .catch(err=>{cerr.textContent="Could not delete: "+err.message;cerr.hidden=false;cyes.disabled=false;cyes.textContent="Try again"})});
 {const p=new URLSearchParams(location.search).get("q");if(p){q.value=p;run()}else if(q.value)run()}
 let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
@@ -632,13 +642,9 @@ def settings_dialog(prefs):
     return (
         f'<template id=ok-icon>{CHECK}</template><template id=chat-icon>{CHAT}</template>'
         f'<template id=act-tpl>{actions({"id": "", "html_url": "", "description": "", "files": {}})}</template>'
-        '<dialog id=confirm class="modal small" aria-labelledby=c-title aria-describedby=c-desc>'
-        '<div class="m-head"><div id=c-title class="m-title">Delete this gist?</div></div>'
-        '<div class="m-body left"><p id=c-name class="c-name"></p>'
-        '<p id=c-desc class="hint">This deletes it from GitHub for good. It cannot be undone.</p>'
-        '<p id=c-err class="c-err" role=alert hidden></p></div>'
-        '<div class="m-foot"><div class="m-row end"><button id=c-no class="btn" type=button autofocus>No, keep it</button>'
-        '<button id=c-yes class="btn danger" type=button>Yes, delete</button></div></div></dialog>'
+        '<template id=confirm-tpl><div class="rc" role=group aria-label="Confirm delete">'
+        '<span class="rc-q">Delete for good?</span>'
+        '<button class="rc-yes" type=button>Yes</button><button class="rc-no" type=button>No</button></div></template>'
         '<div id=note class="note" role=status aria-live=polite hidden></div>'
         '<dialog id=settings class="modal" aria-labelledby=m-title'
         f' data-defaults="{html.escape(json.dumps({k: DEFAULT_PREFS[k] for k in DISPLAY_KEYS}))}">'

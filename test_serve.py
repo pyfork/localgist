@@ -181,6 +181,14 @@ except OSError:
 finally:
     busy.close()
 
+# page script must parse (a duplicate name once broke the whole page); needs node, skipped without it
+import shutil, tempfile
+if shutil.which("node"):
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
+        f.write(serve.JS)
+    r = subprocess.run(["node", "--check", f.name], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
 # CSP: only the shipped script, no inline scripts, images only from this server
 assert serve.JS_HASH == "sha256-" + base64.b64encode(hashlib.sha256(serve.JS.encode()).digest()).decode()
 assert "'unsafe-inline'" not in serve.CSP.split("script-src")[1].split(";")[0]

@@ -72,7 +72,7 @@ def columns(items, page):
 
 
 def host_ok(host):
-    return host in (f"127.0.0.1:{PORT}", f"localhost:{PORT}")
+    return host in (f"127.0.0.1:{PORT}", f"localhost:{PORT}", f"localgist.localhost:{PORT}")
 
 
 def title(g):

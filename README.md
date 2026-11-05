@@ -5,9 +5,11 @@ Read your own GitHub gists in a Finviz-news layout: 2 columns × 90 rows, newest
 ## Run
 
 ```bash
-pyup     # start in the background → http://127.0.0.1:8770
+pyup     # start in the background and open http://localhost:8770 in your browser
 pydown   # stop
 ```
+
+Also answers at `http://localgist.localhost:8770` in Chrome and Firefox (Safari cannot resolve `*.localhost`).
 
 Without the aliases: `python3 serve.py` (Ctrl+C to stop).
 

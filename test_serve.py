@@ -15,7 +15,7 @@ assert (len(l), len(r), l[0]["id"], r[0]["id"]) == (90, 90, "0", "90")
 l, r = serve.columns(items, 2)
 assert (len(l), len(r), l[0]["id"]) == (81, 0, "180")
 
-assert serve.host_ok("127.0.0.1:8770") and serve.host_ok("localhost:8770")
+assert serve.host_ok("127.0.0.1:8770") and serve.host_ok("localhost:8770") and serve.host_ok("localgist.localhost:8770")
 assert not serve.host_ok("evil.example:8770") and not serve.host_ok("127.0.0.1:80") and not serve.host_ok("")
 
 assert serve.title({"id": "x", "description": "", "files": {"a.md": {}}}) == "a.md"

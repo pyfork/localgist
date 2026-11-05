@@ -320,7 +320,7 @@ body{margin:0;background:var(--page);color:var(--fg);font:calc(var(--fs) * var(-
 button,input{font-family:inherit}
 a{color:var(--link);text-decoration:none}a:visited{color:var(--seen)}a:hover{text-decoration:underline}
 a:focus-visible,label:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
-.wrap{width:min(1040px,100% - 64px);margin:32px auto 48px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:clip}
+.wrap{width:min(1040px,100% - 64px);min-height:100vh;margin:0 auto;background:var(--surface);border-inline:1px solid var(--line);overflow:clip}  /* square, runs top to bottom like Finviz */
 .top{background:var(--surface)}
 header{position:relative;display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line)}
 .brand{font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--fg)}.brand:visited{color:var(--fg)}

@@ -200,7 +200,8 @@ def search(q, scopes):
 # ---------- display preferences (one cookie, read by the server so pages render with no flash) ----------
 
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"}  # first one is the default
-DEFAULT_PREFS = {"font": "arial", "time": "1", "in": "desc"}
+OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
+DEFAULT_PREFS = {"font": "arial", "time": "1", "open": "same", "in": "desc"}
 
 
 def read_prefs(cookie_header):
@@ -215,6 +216,8 @@ def read_prefs(cookie_header):
             p["font"] = f
         if (t := q.get("time", [""])[0]) in ("0", "1"):
             p["time"] = t
+        if (o := q.get("open", [""])[0]) in OPENS:
+            p["open"] = o
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
             p["in"] = ",".join(s)
     return p
@@ -236,8 +239,12 @@ def columns(items, page):
     return chunk[:ROWS], chunk[ROWS:]
 
 
-def span(start, n):
-    return f"{start + 1}–{start + n}" if n else "—"
+ORDINALS = "one two three four five six seven eight nine ten".split()
+
+
+def column_name(i):
+    """Column i (0-based, across pages) as 'Page one', 'Page two', ..."""
+    return f"Page {ORDINALS[i] if i < len(ORDINALS) else i + 1}"
 
 
 def host_ok(host):
@@ -304,14 +311,35 @@ kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-mono
 .meta nav b{background:var(--fg);color:var(--surface);font-weight:600}
 .meta nav a:hover{background:var(--hover);text-decoration:none}
 .icon-btn{flex:none;width:34px;height:34px;display:inline-grid;place-items:center;padding:0;border:1px solid var(--field-line);background:var(--field);border-radius:8px;color:var(--muted);cursor:pointer}
-.icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.icon-btn:hover{color:var(--fg)}.icon-btn[aria-expanded=true]{color:var(--fg);background:var(--surface);border-color:var(--fg)}
-.panel{position:absolute;right:24px;top:calc(100% + 6px);z-index:6;width:300px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--pop)}
-.panel fieldset{border:0;margin:0;padding:0}.panel fieldset+fieldset{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.panel legend{padding:0;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.hi{width:18px;height:18px;flex:none}
+.icon-btn:hover{color:var(--fg)}.icon-btn.ghost{border-color:transparent;background:none}.icon-btn.ghost:hover{background:var(--hover)}
+.refresh{color:var(--muted)}.refresh .hi{width:16px;height:16px}.refresh:visited{color:var(--muted)}.refresh:hover{color:var(--fg)}
+.search svg.hi{width:16px;height:16px;stroke:var(--faint)}
+dialog.modal{width:min(440px,calc(100% - 32px));max-height:calc(100% - 32px);padding:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--fg);box-shadow:var(--pop);overflow:auto}
+dialog.modal::backdrop{background:rgb(10 12 16 / .5);backdrop-filter:blur(2px)}
+dialog.modal[open]{animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 12px 20px;border-bottom:1px solid var(--line)}
+.m-title{font-size:15px;font-weight:700}
+.m-body{padding:20px 24px 22px;text-align:center}
+.m-body fieldset{border:0;margin:0;padding:0;min-width:0}.m-body fieldset+fieldset{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.m-body legend{padding:0;margin:0 auto 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.m-body .switch{display:inline-flex}
+.m-foot{padding:12px 16px 12px 20px;border-top:1px solid var(--line);background:var(--field);border-radius:0 0 16px 16px}
+.m-row{display:flex;align-items:center;gap:8px}
+.m-msg{margin-right:auto;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+.m-msg.ok{color:#1f8a4c}.m-msg.dirty{color:var(--fg);font-weight:600}
+.m-msg .hi{width:16px;height:16px}
+.ask .m-msg{color:var(--fg);font-weight:600}
+.btn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--field-line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--surface);border-color:var(--fg)}.btn.primary:hover{filter:brightness(1.15)}
+.btn.primary:disabled{opacity:.35;cursor:default;filter:none}
+.btn.danger{background:#c62828;border-color:#c62828;color:#fff}.btn.danger:hover{filter:brightness(1.1)}
 .seg{display:flex;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px}
 .seg label{flex:1;position:relative;cursor:pointer}
 .seg input,.switch input,.chip input{position:absolute;opacity:0;pointer-events:none}
+.f-same,.f-new{font-family:inherit}
 .seg span{display:grid;place-items:center;height:30px;padding:0 6px;border-radius:6px;font-size:13px;color:var(--muted);white-space:nowrap}
 .seg label:hover span{color:var(--fg)}
 .seg label:has(input:checked) span{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .12)}
@@ -322,20 +350,19 @@ kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-mono
 .track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgb(0 0 0 / .3);transition:translate .15s}
 .switch input:checked+.track{background:var(--focus)}.switch input:checked+.track::after{translate:14px 0}
 .switch input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
-.hint{margin:6px 0 0 44px;color:var(--faint);font-size:11.5px}
+.hint{margin:8px 0 0;color:var(--faint);font-size:11.5px}
 .scope{display:flex;align-items:center;gap:8px;padding:8px 24px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
 .chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1px solid var(--field-line);border-radius:999px;cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap}
-.chip::before{content:"";width:12px;height:12px;border-radius:3px;border:1.5px solid var(--faint)}
+.chip .hi{width:14px;height:14px;padding:1px;border-radius:4px;border:1.5px solid var(--faint);color:transparent}
 .chip:hover{color:var(--fg)}
 .chip:has(input:checked){color:var(--fg);border-color:var(--fg)}
-.chip:has(input:checked)::before{background:var(--fg);border-color:var(--fg);box-shadow:inset 0 0 0 2px var(--surface)}
+.chip:has(input:checked) .hi{background:var(--fg);border-color:var(--fg);color:var(--surface)}
 .chip:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
 #st{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
 input[name=t]{position:absolute;opacity:0;pointer-events:none}
 .tabs{display:none}
 main{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:12px 24px 28px}
 h2{display:flex;justify-content:space-between;margin:10px 0 2px;padding-bottom:6px;border-bottom:2px solid var(--rule);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-h2 span:last-child{color:var(--muted);font-weight:500;letter-spacing:0;font-variant-numeric:tabular-nums}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 tr:hover td{background:var(--hover)}
 td{height:23px;padding:3px 0;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
@@ -357,7 +384,7 @@ html.notime td.t{width:64px}html.notime .h{display:none}
  .sort{order:4}.sort a,.sort b{height:34px;padding:0 10px;font-size:13px}
  .meta{gap:8px}
  kbd{display:none}
- .panel{left:16px;right:16px;width:auto;top:calc(100% + 4px)}
+ .m-row.ask{flex-wrap:wrap}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
  .scope{display:none;padding:8px 16px;gap:6px;overflow-x:auto}.scope>span:first-child{display:none}
  .top:focus-within .scope,.top:has(#q:not(:placeholder-shown)) .scope{display:flex}
  .tabs{display:flex;border-bottom:1px solid var(--line)}
@@ -374,32 +401,46 @@ html.notime td.t{width:64px}html.notime .h{display:none}
 }
 """
 
-ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
-GEAR = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/>'
-        '<circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>')
+def hero(d, size=24):
+    """A Heroicons v2 outline icon (24px) or solid mini icon (16px). Heroicons are the only icons used."""
+    if size == 16:
+        return f'<svg class="hi" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">{d}</svg>'
+    return (f'<svg class="hi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{d}</svg>')
+
+
+ICON = hero('<path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>')  # magnifying-glass
+GEAR = hero(  # cog-6-tooth
+    '<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>'
+    '<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>'
+)
+REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>')  # arrow-path
+XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
+CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
 SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap"
 
 # One script for the list page, pinned in the CSP by its hash.
 # Search: Cmd/Ctrl+F focuses it (again inside the box: the browser's own find). Description and
 # file-name matches run here; content matches come from /search. Rows are built with textContent only.
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
-const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],lab=[$("h1"),$("h2"),$("l1"),$("l2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
-const keep=box.map(e=>e.innerHTML),keepLab=lab.map(e=>e.textContent),keepCnt=cnt.textContent;
-const span=(a,n)=>n?`${a+1}–${a+n}`:"—";
-const prefs={font:root.dataset.font,time:root.dataset.time,in:root.dataset.in};
-const save=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
+const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
+const keep=box.map(e=>e.innerHTML),keepCnt=cnt.textContent;
+const prefs={font:root.dataset.font,time:root.dataset.time,open:root.dataset.open,in:root.dataset.in};
+// one cookie, read by the server on every page load, so settings survive restarts of localgist
+const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
+const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
 const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filter(b=>b.checked).map(b=>b.value);
 function table(list,msg){if(!list.length){const p=document.createElement("p");p.className="empty";p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a"),d=document.createElement("span"),h=document.createElement("span");
  c.className="t";d.textContent=g[2];h.className="h";h.textContent=g[3];c.append(d," ",h);
- a.href=g[1];a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[4];r.insertCell().append(a)}return t}
+ a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[4];r.insertCell().append(a)}return t}
 function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
  box[0].replaceChildren(table(L,`No gists match “${s}”.`));box[1].replaceChildren(table(R,m.length?"No more matches.":""));
- lab[0].textContent=lab[2].textContent=span(0,L.length);lab[1].textContent=lab[3].textContent=span(N,R.length);
  cnt.textContent=`${m.length} of ${D.length}`+(m.length>2*N?" (first 180)":"");pg.hidden=true;$("t1").checked=true}
 let seq=0,timer;
-function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;clearTimeout(timer);st.textContent="";
- if(!s){box.forEach((e,i)=>e.innerHTML=keep[i]);lab.forEach((e,i)=>e.textContent=keepLab[i]);cnt.textContent=keepCnt;pg.hidden=false;return}
+function remember(raw){const u=new URL(location.href);if(raw)u.searchParams.set("q",raw);else u.searchParams.delete("q");history.replaceState(null,"",u)}
+function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;clearTimeout(timer);st.textContent="";remember(raw);
+ if(!s){box.forEach((e,i)=>e.innerHTML=keep[i]);targets(prefs.open);cnt.textContent=keepCnt;pg.hidden=false;return}
  const w=s.split(/\s+/);
  if(!sc.includes("content")){show(D.filter(g=>{const h=(sc.includes("desc")?g[5]:"")+" "+(sc.includes("file")?g[6]:"");return w.every(x=>h.includes(x))}),raw);return}
  st.textContent="Searching contents…";
@@ -409,19 +450,34 @@ function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;
   .catch(()=>{if(my===seq)st.textContent="Content search failed"}),150)}
 q.addEventListener("input",run);
 q.addEventListener("keydown",e=>{if(e.key==="Escape"){q.value="";run();q.blur()}
- else if(e.key==="Enter"&&q.value.trim()){const a=document.querySelector("main a");if(a)window.open(a.href,"_blank","noopener,noreferrer")}});
-document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="f"&&document.activeElement!==q){e.preventDefault();q.focus();q.select()}});
-boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].checked=true;prefs.in=scope().join(",");save();
+ else if(e.key==="Enter"&&q.value.trim()){const a=document.querySelector("main a");if(a){if(prefs.open==="new")window.open(a.href,"_blank","noopener,noreferrer");else location.href=a.href}}});
+document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="f"&&document.activeElement!==q&&!$("settings").open){e.preventDefault();q.focus();q.select()}});
+boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].checked=true;prefs.in=scope().join(",");store();
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
-const gear=$("gear"),panel=$("panel"),open=o=>{panel.hidden=!o;gear.setAttribute("aria-expanded",o)};
-gear.addEventListener("click",()=>open(panel.hidden));
-document.addEventListener("click",e=>{if(!panel.hidden&&!panel.contains(e.target)&&!gear.contains(e.target))open(false)});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden){open(false);gear.focus()}});
-panel.addEventListener("change",e=>{const t=e.target;if(t.name==="font")prefs.font=t.value;if(t.id==="showtime")prefs.time=t.checked?"1":"0";save();
- if(t.name==="font"&&t.value==="source"&&!$("fsrc"))return location.reload();
- root.dataset.font=prefs.font;root.classList.toggle("notime",prefs.time==="0")});
+// Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
+const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
+let saved={font:prefs.font,time:prefs.time,open:prefs.open},justSaved=false;
+const form=()=>({font:dlg.querySelector("input[name=font]:checked").value,open:dlg.querySelector("input[name=open]:checked").value,time:$("showtime").checked?"1":"0"});
+const dirty=()=>{const f=form();return f.font!==saved.font||f.time!==saved.time||f.open!==saved.open};
+function apply(p){root.dataset.font=p.font;root.classList.toggle("notime",p.time==="0");targets(p.open);
+ if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
+function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
+ if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
+function setForm(p){for(const k of["font","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true;$("showtime").checked=p.time==="1"}
+function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
+function close(){asking(false);dlg.close();gear.focus()}
+function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
+function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status()}
+gear.addEventListener("click",()=>{setForm(saved);apply(saved);justSaved=false;status();asking(false);dlg.showModal()});
+dlg.addEventListener("change",()=>{apply(form());justSaved=false;status();asking(false)});
+dlg.addEventListener("cancel",e=>{e.preventDefault();tryClose()});
+dlg.addEventListener("click",e=>{if(e.target===dlg)tryClose()});
+dlg.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();if(dirty())save()}});
+$("m-close").addEventListener("click",tryClose);btn.addEventListener("click",save);
+$("m-keep").addEventListener("click",()=>asking(false));
+$("m-discard").addEventListener("click",()=>{setForm(saved);apply(saved);close()});
 if(!/Mac|iPhone|iPad/.test(navigator.platform))$("k").textContent="Ctrl F";
-if(q.value)run();
+{const p=new URLSearchParams(location.search).get("q");if(p){q.value=p;run()}else if(q.value)run()}
 const V=$("d").dataset.v,u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
 setInterval(check,60000);document.addEventListener("visibilitychange",check);
@@ -437,7 +493,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=fsrc rel=stylesheet href="{SOURCE_SANS_CSS}">' if prefs["font"] == "source" else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-time="{prefs["time"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-time="{prefs["time"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         f'{" class=notime" if prefs["time"] == "0" else ""}><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -446,16 +502,16 @@ def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     )
 
 
-def rows(items, field="updated_at"):
+def rows(items, field="updated_at", open_in="same"):
     if not items:
         return '<p class="empty">No more gists.</p>'
-    out = []
+    out, target = [], " target=_blank" if open_in == "new" else ""
     for g in items:
         d, h = stamp(g[field])
         t = html.escape(title(g))
         out.append(
             f'<tr><td class="t"><span>{d}</span> <span class="h">{h}</span></td>'
-            f'<td><a href="{html.escape(gist_url(g))}" target="_blank" rel="noopener noreferrer" title="{t}">{t}</a></td></tr>'
+            f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a></td></tr>'
         )
     return f'<table>{"".join(out)}</table>'
 
@@ -470,20 +526,30 @@ def sort_items(items, sort):
     return items
 
 
-def panel(prefs):
-    fonts = "".join(
-        f'<label><input type=radio name=font value={k}{" checked" if prefs["font"] == k else ""}>'
-        f'<span class="f-{k}">{v}</span></label>'
-        for k, v in FONTS.items()
-    )
+def settings_dialog(prefs):
+    def seg(name, options):
+        return "".join(
+            f'<label><input type=radio name={name} value={k}{" checked" if prefs[name] == k else ""}>'
+            f'<span class="f-{k}">{v}</span></label>'
+            for k, v in options.items()
+        )
     return (
-        f'<button id=gear class="icon-btn" type=button aria-expanded=false aria-controls=panel aria-label="Display settings" title="Display settings">{GEAR}'
-        '</button>'
-        '<div id=panel class="panel" role=dialog aria-label="Display settings" hidden>'
-        f'<fieldset><legend>Font</legend><div class="seg">{fonts}</div></fieldset>'
+        f'<template id=ok-icon>{CHECK}</template><dialog id=settings class="modal" aria-labelledby=m-title>'
+        f'<div class="m-head"><div id=m-title class="m-title">Display settings</div>'
+        f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
+        '<div class="m-body">'
+        f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
+        f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
+        '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '<fieldset><legend>Dates</legend><label class="switch"><input type=checkbox id=showtime'
         f'{" checked" if prefs["time"] == "1" else ""}><span class="track"></span>Show time</label>'
         '<p class="hint">Malaysia time (UTC+8), e.g. 4 Nov 14:05</p></fieldset></div>'
+        '<div class="m-foot"><div id=m-normal class="m-row"><span id=m-msg class="m-msg" aria-live=polite></span>'
+        '<button id=m-save class="btn primary" type=button disabled>Save</button></div>'
+        '<div id=m-ask class="m-row ask" role=alert hidden><span class="m-msg">You have unsaved changes.</span>'
+        '<button id=m-keep class="btn" type=button>Keep editing</button>'
+        '<button id=m-discard class="btn danger" type=button>Exit anyway</button></div></div>'
+        '</dialog>'
     )
 
 
@@ -496,8 +562,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
     pages = max(1, -(-len(items) // (2 * ROWS)))
     page = min(max(page, 1), pages)
     left, right = columns(items, page)
-    base = (page - 1) * 2 * ROWS
-    r1, r2 = span(base, len(left)), span(base + ROWS, len(right))
+    r1, r2 = column_name(2 * page - 2), column_name(2 * page - 1)
     nav = "".join(
         f'<b aria-current="page">{p}</b>' if p == page else f'<a href="/?p={p}{qs}">{p}</a>' for p in range(1, pages + 1)
     )
@@ -508,7 +573,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
     )
     on = prefs["in"].split(",")
     chips = "".join(
-        f'<label class="chip"><input type=checkbox value={k}{" checked" if k in on else ""}>{v}</label>'
+        f'<label class="chip"><input type=checkbox value={k}{" checked" if k in on else ""}>{CHECK}{v}</label>'
         for k, v in SCOPES.items()
     )
     return shell(
@@ -520,12 +585,13 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
-        f'<nav id=pg aria-label="Pages">{nav}<a href="/?p={page}{qs}&refresh=1" title="Reload from GitHub">↻</a></nav></div>'
-        f'{panel(prefs)}</header>'
+        f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
+        f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" title="Display settings">{GEAR}</button></header>'
         f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<span id=st aria-live=polite></span></div>'
-        f'<div class="tabs"><label for=t1 id=l1>{r1}</label><label for=t2 id=l2>{r2}</label></div></div>'
-        f'<main><section class="c1"><h2><span>Gists</span><span id=h1>{r1}</span></h2><div id=r1>{rows(left, field)}</div></section>'
-        f'<section class="c2"><h2><span>Gists</span><span id=h2>{r2}</span></h2><div id=r2>{rows(right, field)}</div></section></main>'
+        f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'
+        f'<main><section class="c1"><h2>{r1}</h2><div id=r1>{rows(left, field, prefs["open"])}</div></section>'
+        f'<section class="c2"><h2>{r2}</h2><div id=r2>{rows(right, field, prefs["open"])}</div></section></main>'
+        f'{settings_dialog(prefs)}'
         '<div role=status aria-live=polite><button id=upd class=toast type=button hidden>New update available. Click to refresh</button></div>'
         f'<script type="application/json" id=d data-v="{html.escape(signature(held))}">{search_data(items, field)}</script>',
         prefs,

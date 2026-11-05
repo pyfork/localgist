@@ -1,6 +1,6 @@
 # localgist
 
-A list of your own GitHub gists in a Finviz-news layout: 2 columns × 90 rows, newest first, on your own machine only. Each row opens the gist on GitHub in a new tab.
+A list of your own GitHub gists in a Finviz-news layout: 2 columns × 90 rows, newest first, on your own machine only. Each row opens the gist on GitHub.
 
 ## Run
 
@@ -23,7 +23,8 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 - Desktop: a centered card at most 1040px wide, with at least 32px of page showing on each side (never full width), two columns of 90 rows, then page 2.
 - Under 768px: full width, one column, sticky search and tabs, rows at least 48px tall.
 - Sort: **Updated** (default, most recently edited first) or **Created** (newest first). GitHub itself lists by creation date; localgist re-sorts.
-- Row: date and time in Malaysia time (`4 Nov 14:05`; the year shows when it is not this year), then the description. Click to open the gist on GitHub in a new tab.
+- Columns are headed **Page one**, **Page two** (then Page three, Page four on page 2).
+- Row: date and time in Malaysia time (`4 Nov 14:05`; the year shows when it is not this year), then the description. Click to open the gist on GitHub (same window by default, so Back returns to the list with your search still in place).
 - While the list page is open and visible, it checks for new or edited gists every minute and shows "New update available. Click to refresh".
 - Light and dark follow the system setting.
 
@@ -37,12 +38,19 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Display settings
 
-The ⚙ button (top right) opens:
+The gear button (top right) opens a centered settings window:
 
-- **Font:** Arial (default), Source Sans 3, Helvetica. Source Sans 3 is loaded from Google Fonts, only when you pick it.
-- **Dates:** Show time (default on). Off shows only `4 Nov`.
+| Setting | Options | Default |
+|---|---|---|
+| Font | Arial · Source Sans 3 · Helvetica | Arial |
+| Clicks open | Same window · New tab | Same window (Back works) |
+| Dates | Show time on / off (Malaysia time) | On |
 
-Settings and the Search-in ticks are kept in one cookie on this browser, and the server applies them when it draws the page, so nothing flickers.
+- Choices preview live behind the window. **Save** (or ⌘S) keeps them.
+- **Esc** closes once saved. With unsaved changes, Esc or ✕ asks: **Keep editing** or **Exit anyway** (which undoes the preview).
+- Saved settings and the Search-in ticks live in one cookie on this browser for a year. The server reads it on every page load, so they survive `pydown` / `pyup`, restarts and port changes. They do not follow you to another browser or a private window.
+- Source Sans 3 is loaded from Google Fonts, only while it is picked.
+- Icons are Heroicons only.
 
 ## Resources
 

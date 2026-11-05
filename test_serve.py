@@ -38,19 +38,23 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"font": "arial", "time": "1", "in": "desc"}
-assert serve.read_prefs("lg=font%3Dsource%26time%3D0%26in%3Dfile%252Ccontent") == {"font": "source", "time": "0", "in": "file,content"}
+assert serve.read_prefs(None) == {"font": "arial", "time": "1", "open": "same", "in": "desc"}
+assert serve.read_prefs("lg=font%3Dsource%26time%3D0%26open%3Dnew%26in%3Dfile%252Ccontent") == {"font": "source", "time": "0", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"font": "source", "time": "0", "in": "desc,content"})
+page = serve.index_page(1, False, "updated", {"font": "source", "time": "0", "open": "new", "in": "desc,content"})
 assert 'class=notime' in page and 'data-font="source"' in page and "fonts.googleapis.com" in page
-assert 'href="https://gist.github.com/g1" target="_blank" rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page
+assert 'href="https://gist.github.com/g1" target=_blank rel="noopener noreferrer"' in page and "Pay &lt;b&gt;" in page
 assert 'value=content checked' in page and 'value=file>' in page
-assert "fonts.googleapis.com" not in serve.index_page(1, False)
+assert "<h2>Page one</h2>" in page and "<h2>Page two</h2>" in page and "Gists</span>" not in page
+plain = serve.index_page(1, False)
+assert "<link id=fsrc" not in plain and 'href="https://gist.github.com/g1" rel=' in plain  # same window by default
+assert "<dialog id=settings" in plain and "value=same checked" in plain
+assert serve.column_name(2) == "Page three" and serve.column_name(11) == "Page 12"
 
 # content search: fields combine, words must all match, results grow while the index builds
 serve._list["gists"] = [

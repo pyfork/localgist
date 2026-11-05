@@ -494,18 +494,17 @@ td a{display:inline-block;max-width:calc(100% - 8px);overflow:hidden;text-overfl
 .cd{display:inline-block;width:5px;height:5px;margin-left:3px;border-radius:50%;background:var(--link);vertical-align:top}  /* superscript dot: this gist has comments */
 .ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:var(--rs);background:none;color:var(--faint);cursor:pointer;opacity:0}
 .ib .hi{width:15px;height:15px}
-.ib.copy{width:65px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font:600 11px/1 var(--ff)}  /* 2.5x the delete button: the safe action is the easy target */
+.stamp{padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}.stamp:hover{color:var(--link);text-decoration:underline}.stamp.done{color:#1f8a4c;text-decoration:none}  /* the date is the copy-link control */
 tr:hover .ib,tr:focus-within .ib,.ib:focus-visible{opacity:1}
 .ib:hover{background:var(--surface);color:var(--fg)}.ib.del:hover{color:#c62828}
-.ib.done{opacity:1;color:#1f8a4c}
 @media (hover:none){.ib{opacity:.7}.acts{opacity:1}}
 td.act{position:relative}
-tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
+tr.confirming .acts{opacity:1}tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc{position:absolute;right:0;top:0;bottom:0;z-index:1;display:flex;align-items:center;gap:6px;padding:0 4px 0 12px;white-space:nowrap;
  background:linear-gradient(90deg,transparent,color-mix(in srgb,#c62828 9%,var(--surface)) 10px)}
 .rc-q{font-weight:600;color:#c62828;font-size:12px}
 .rc button{height:20px;padding:0 9px;border-radius:var(--rs);font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
-.rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
+.rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc-q{font-variant-numeric:tabular-nums}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
 .m-body .m-body .m-body .btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
 .totop{position:fixed;right:24px;bottom:24px;z-index:4;width:40px;height:40px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:var(--r);background:var(--surface);color:var(--muted);box-shadow:var(--shadow);cursor:pointer}
@@ -544,8 +543,8 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  td{height:48px;padding:8px 0;white-space:normal}
  td a{display:-webkit-box;max-width:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td:has(>.cd){position:relative;padding-left:9px}.cd{position:absolute;left:0;top:15px;margin:0}  /* phones: dot sits just before the title */
- td.t{width:68px;padding:10px 8px 0 4px;font-size:12px}
- td.act{display:none}  /* copy and delete are desktop-only */
+ td.t{width:68px;padding:0;font-size:12px}.stamp{display:flex;justify-content:flex-end;align-items:flex-start;width:100%;min-height:48px;padding:10px 8px 0 4px}  /* whole cell is the tap target */
+ td.act{display:none}  /* delete is desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
  .totop{right:16px;bottom:16px;width:48px;height:48px}.totop .hi{width:24px;height:24px}  /* 48px: Apple and Google tap minimums */
 }
@@ -567,7 +566,6 @@ GEAR = hero(  # cog-6-tooth
     '<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>'
 )
 REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>')  # arrow-path
-COPY = hero('<path d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z"/>')  # clipboard-document
 TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHEVRON_UP = hero('<path d="m4.5 15.75 7.5-7.5 7.5 7.5"/>')  # chevron-up
@@ -590,11 +588,11 @@ const boxes=[...document.querySelectorAll(".scope input")],scope=()=>boxes.filte
 function table(list,msg){if(!list.length){const p=document.createElement("div");p.className="empty";
  if(msg.startsWith("No gists match")){p.className="empty quiet";p.textContent=msg.replace("No gists match","Nothing matches")}else p.textContent=msg;return p}
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
- c.className="t";c.textContent=g[2];
+ c.className="t";const sb=document.createElement("button");sb.className="stamp";sb.type="button";sb.dataset.u=g[1];sb.title="Copy link";sb.ariaLabel="Copy link to "+g[3];sb.textContent=g[2];c.append(sb);
  a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a);
  if(g[6]){const d=document.createElement("sup");d.className="cd";d.role="img";d.title=d.ariaLabel=`${g[6]} comment${g[6]===1?"":"s"}`;a.after(d)}
  const x=r.insertCell();x.className="act";x.append($("act-tpl").content.cloneNode(true));
- const[cp,dl]=x.querySelectorAll("button");cp.dataset.u=g[1];cp.ariaLabel="Copy link to "+g[3];dl.dataset.id=g[0];dl.ariaLabel="Delete "+g[3]}return t}
+ const dl=x.querySelector("button");dl.dataset.id=g[0];dl.ariaLabel="Delete "+g[3]}return t}
 function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
  box[0].replaceChildren(table(L,`No gists match “${s}”.`));box[1].replaceChildren(table(R,m.length?"No more matches.":""));
  cnt.textContent=`${m.length} of ${D.length}`+(m.length>2*N?" (first 180)":"");pg.hidden=true;$("t1").checked=true}
@@ -647,7 +645,7 @@ $("m-close").addEventListener("click",tryClose);btn.addEventListener("click",sav
 $("m-keep").addEventListener("click",()=>asking(false));
 $("m-discard").addEventListener("click",()=>{setForm(saved);apply(saved);close()});
 if(!/Mac|iPhone|iPad/.test(navigator.platform)){$("k").textContent="Ctrl F";gear.title="Display settings (Ctrl K)"}
-// Row actions: copy link, delete (asks first; the server checks this page's CSRF token)
+// Row actions: the date copies the link; delete (asks first; the server checks this page's CSRF token)
 let noteT;const note=$("note"),say=m=>{note.textContent=m;note.hidden=false;clearTimeout(noteT);noteT=setTimeout(()=>note.hidden=true,2200)};
 // clipboard API first; the old execCommand path covers browsers that refuse it
 const copyText=t=>(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{const a=document.createElement("textarea");
@@ -655,20 +653,29 @@ const copyText=t=>(navigator.clipboard?navigator.clipboard.writeText(t):Promise.
 // Delete asks right in the row: "Delete for good? Yes / No". No is focused; Esc or clicking elsewhere also means No.
 let pending=null;
 function cancel(){if(!pending)return;const{tr,box,btn}=pending;box.remove();tr.classList.remove("confirming");pending=null;btn.focus()}
-function askDelete(btn){cancel();const tr=btn.closest("tr");const box=$("confirm-tpl").content.firstElementChild.cloneNode(true);
+function askDelete(btn){if(queued.has(btn.dataset.id))return;cancel();const tr=btn.closest("tr");const box=$("confirm-tpl").content.firstElementChild.cloneNode(true);
  btn.parentElement.append(box);tr.classList.add("confirming");pending={tr,box,btn,id:btn.dataset.id,name:tr.querySelector("a").textContent};box.querySelector(".rc-no").focus()}
-function confirmDelete(){const o=pending;if(!o)return;const yes=o.box.querySelector(".rc-yes"),qq=o.box.querySelector(".rc-q");
- o.box.querySelectorAll("button").forEach(b=>b.disabled=true);qq.textContent="Deleting\u2026";
- fetch("/api/gists/"+encodeURIComponent(o.id),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf}}).then(r=>r.ok?r.json():r.text().then(t=>{throw new Error(t||r.status)}))
- .then(j=>{V=j.v;pending=null;drop(o.id);say(`Deleted \u201c${o.name}\u201d`)})
- .catch(()=>{qq.textContent="Failed. Retry?";o.box.querySelectorAll("button").forEach(b=>b.disabled=false);yes.focus()})}
+// Yes starts a 9 s countdown with Undo; leaving or reloading the page sends the delete at once (keepalive).
+const queued=new Map(),WAIT=9;
+const send=(o,keep)=>fetch("/api/gists/"+encodeURIComponent(o.id),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf},keepalive:!!keep});
+function confirmDelete(){const o=pending;if(!o)return;pending=null;queued.set(o.id,o);o.left=WAIT;
+ o.box.innerHTML='<span class="rc-q"></span><button class="rc-undo" type=button>Undo</button>';
+ const qq=o.box.querySelector(".rc-q"),tick=()=>{qq.textContent=`Deleting in ${o.left}s`};tick();o.box.querySelector(".rc-undo").focus();
+ o.t=setInterval(()=>{if(--o.left>0)tick();else{clearInterval(o.t);fire(o)}},1000)}
+function undo(o){clearInterval(o.t);queued.delete(o.id);o.box.remove();o.tr.classList.remove("confirming");if(o.btn.isConnected)o.btn.focus();say(`Kept \u201c${o.name}\u201d`)}
+function fire(o){const qq=o.box.querySelector(".rc-q");qq.textContent="Deleting\u2026";o.box.querySelector(".rc-undo").disabled=true;
+ send(o).then(r=>r.ok?r.json():r.text().then(t=>{throw new Error(t||r.status)}))
+ .then(j=>{V=j.v;queued.delete(o.id);drop(o.id);say(`Deleted \u201c${o.name}\u201d`)})
+ .catch(()=>{queued.delete(o.id);o.box.remove();o.tr.classList.remove("confirming");say("Could not delete. Try again.")})}
+addEventListener("pagehide",()=>{for(const o of queued.values()){clearInterval(o.t);send(o,true).catch(()=>{})}queued.clear()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&pending){e.preventDefault();cancel()}});
 document.addEventListener("click",e=>{if(pending&&!pending.box.contains(e.target)&&!e.target.closest(".ib.del"))cancel()});
-document.querySelector("main").addEventListener("click",e=>{const b=e.target.closest(".ib");if(!b)return;
- if(b.classList.contains("copy")){copyText(b.dataset.u).then(()=>{const old=b.innerHTML;b.innerHTML=$("ok-icon").innerHTML+"<span aria-hidden=true>Copied</span>";b.classList.add("done");say("Link copied");
-  setTimeout(()=>{b.innerHTML=old;b.classList.remove("done")},1400)},()=>say("Could not copy"));return}
- askDelete(b)});
-document.querySelector("main").addEventListener("click",e=>{if(e.target.closest(".rc-no"))cancel();else if(e.target.closest(".rc-yes"))confirmDelete()});
+document.querySelector("main").addEventListener("click",e=>{const s=e.target.closest(".stamp");
+ if(s){copyText(s.dataset.u).then(()=>{const old=s.textContent;s.textContent="Copied";s.classList.add("done");say("Link copied");
+  setTimeout(()=>{s.textContent=old;s.classList.remove("done")},1400)},()=>say("Could not copy"));return}
+ const b=e.target.closest(".ib");if(b)askDelete(b)});
+document.querySelector("main").addEventListener("click",e=>{if(e.target.closest(".rc-no"))cancel();else if(e.target.closest(".rc-yes"))confirmDelete();
+ else if(e.target.closest(".rc-undo")){const o=[...queued.values()].find(x=>x.box.contains(e.target));if(o)undo(o)}});
 function drop(id){const sel=`button[data-id="${CSS.escape(id)}"]`;document.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());
  for(let i=0;i<keep.length;i++){const t=document.createElement("div");t.innerHTML=keep[i];t.querySelectorAll(sel).forEach(b=>b.closest("tr").remove());keep[i]=t.innerHTML}
  const k=D.findIndex(g=>g[0]===id);if(k>=0)D.splice(k,1);keepCnt=`${D.length} gists`;if(!q.value.trim())cnt.textContent=keepCnt;q.placeholder=`Search ${D.length} gists`}
@@ -754,8 +761,7 @@ def comments(g):
 
 def actions(g):
     url, t = html.escape(gist_url(g)), html.escape(title(g))
-    return (f'<span class="acts"><button class="ib copy" type=button data-u="{url}" aria-label="Copy link to {t}" title="Copy link">{COPY}<span aria-hidden=true>Copy</span></button>'
-            f'<button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button></span>')
+    return (f'<span class="acts"><button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button></span>')
 
 
 def rows(items, field="updated_at", open_in="same"):
@@ -765,7 +771,7 @@ def rows(items, field="updated_at", open_in="same"):
     for g in items:
         t = html.escape(title(g))
         out.append(
-            f'<tr><td class="t">{stamp(g[field])}</td>'
+            f'<tr><td class="t"><button class="stamp" type=button data-u="{html.escape(gist_url(g))}" title="Copy link" aria-label="Copy link to {t}">{stamp(g[field])}</button></td>'
             f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a>{comments(g)}</td>'
             f'<td class="act">{actions(g)}</td></tr>'
         )

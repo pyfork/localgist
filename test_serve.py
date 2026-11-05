@@ -58,7 +58,7 @@ assert 'data-palette="sage"' in page and 'name=palette value=sage checked' in pa
 assert page.count('class="pcard"') == len(serve.PALETTES) == 7
 assert serve.read_prefs("lg=palette%3Dft")["palette"] == "ft" and serve.read_prefs("lg=palette%3Deconomist")["palette"] == "economist"
 assert 'data-theme="dark"' in page and 'data-size' not in page and 'sizeseg' not in page
-assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page
+assert 'class="stamp" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page and 'ib copy' not in page
 assert f'data-csrf="{serve.CSRF}"' in page and "&quot;theme&quot;: &quot;system&quot;" in page  # Reset defaults ride on the dialog
 assert serve.comments({"comments": 3}).startswith('<sup class="cd"') and "3 comments" in serve.comments({"comments": 3})
 assert serve.comments({"comments": 0}) == "" and "1 comment\"" in serve.comments({"comments": 1})

@@ -92,11 +92,14 @@ def call(headers):
     return r.status, body
 host = f"localhost:{port}"
 ok_headers = {"Host": host, "Origin": f"http://{host}", "Sec-Fetch-Site": "same-origin", "X-CSRF": serve.CSRF}
-assert call({**ok_headers, "X-CSRF": "wrong"})[0] == 403
-assert call({**ok_headers, "Origin": "https://evil.example"})[0] == 403
-assert call({**ok_headers, "Sec-Fetch-Site": "cross-site"})[0] == 403
-assert call({k: v for k, v in ok_headers.items() if k != "Origin"})[0] == 403
-assert call({**ok_headers, "Host": "evil.example", "Origin": "http://evil.example"})[0] == 403
+with contextlib.redirect_stderr(io.StringIO()) as err:
+    assert call({**ok_headers, "X-CSRF": "wrong"})[0] == 403
+    assert call({**ok_headers, "Origin": "https://evil.example"})[0] == 403
+    assert call({**ok_headers, "Sec-Fetch-Site": "cross-site"})[0] == 403
+    assert call({k: v for k, v in ok_headers.items() if k != "Origin"})[0] == 403
+    assert call({**ok_headers, "Host": "evil.example", "Origin": "http://evil.example"})[0] == 403
+assert err.getvalue().count("localgist: refused DELETE '/api/gists/ab1'") == 5, err.getvalue()  # each refusal leaves one log line
+assert "Origin 'https://evil.example'" in err.getvalue()
 assert deleted == []                                             # nothing reached GitHub so far
 serve._list["gists"] = [{"id": "ab1", "updated_at": "1"}]
 serve._content["ab1"] = ("x", "text")
@@ -117,6 +120,14 @@ try:
 finally:
     serve.fetch_all = real_fetch
 assert [g["id"] for g in serve._list["gists"]] == ["cd2"], serve._list["gists"]
+# the deleted-id list is pruned: a fetch that began over a minute after a delete drops that id from it
+serve._gone["old"] = _t.time() - serve.GONE_GRACE - 5
+serve.fetch_all = lambda: [{"id": "cd2", "updated_at": "1"}]
+try:
+    serve._load()
+finally:
+    serve.fetch_all = real_fetch
+assert "old" not in serve._gone and "ef3" in serve._gone, serve._gone      # ef3 was deleted just now: still filtered
 serve._gone.clear()  # later tests start with no deleted ids
 # GET serves pages only: bad page numbers are page 1 (not a false "GitHub fetch failed"); ?refresh does nothing
 seen, real_index = [], serve.index_page
@@ -149,11 +160,12 @@ fetches, real_fetch = [], serve.fetch_all
 serve.fetch_all = lambda: fetches.append(1) or [{"id": "cd2", "updated_at": "1"}]
 serve._checked[0] = _t.time()  # the update check stays quiet: no GitHub call from /api/version
 try:
-    for bad in ({**ok_headers, "X-CSRF": "wrong"}, {**ok_headers, "Sec-Fetch-Site": "same-site"},
-                {**ok_headers, "Sec-Fetch-Site": "cross-site"}, {"Host": host},                    # curl, or a browser with no Fetch Metadata
-                {k: v for k, v in ok_headers.items() if k != "Origin"}):
-        for path in ("/api/refresh", "/api/search?q=x&in=content", "/api/version"):
-            assert req("POST", path, bad)[0] == 403, (path, bad)
+    with contextlib.redirect_stderr(io.StringIO()):  # each refusal logs a line; keep test output quiet
+        for bad in ({**ok_headers, "X-CSRF": "wrong"}, {**ok_headers, "Sec-Fetch-Site": "same-site"},
+                    {**ok_headers, "Sec-Fetch-Site": "cross-site"}, {"Host": host},                # curl, or a browser with no Fetch Metadata
+                    {k: v for k, v in ok_headers.items() if k != "Origin"}):
+            for path in ("/api/refresh", "/api/search?q=x&in=content", "/api/version"):
+                assert req("POST", path, bad)[0] == 403, (path, bad)
     assert fetches == [] and not serve._ilock.locked()                                    # nothing reached GitHub
     assert req("POST", "/api/refresh", ok_headers)[:2] == (200, b'{"v": "1-cd2-1"}') and fetches == [1]
     assert json.loads(req("POST", "/api/search?q=x", ok_headers)[1])["ids"] == []
@@ -205,20 +217,15 @@ def fake_gh(path, body=None, with_headers=False):
 serve.gh = fake_gh
 assert [g["id"] for g in serve.fetch_all()] == ["old-edited", "y", "x"]
 
-# list cache: first load waits, a stale list is served at once and refreshed in the background
+# list cache: first load waits; after that only ↻ or the page's update check fetches
 calls = []
 serve._list.update(at=0.0, gists=[])
 serve.fetch_all = lambda: calls.append(1) or [{"id": str(len(calls))}]
 assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # cold: fetched in-line
 assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # fresh: no fetch
 serve._list["at"] -= serve.STALE_SECONDS + 1
-assert serve.gists()[0]["id"] == "1"                            # stale: old list returned at once
-for _ in range(50):
-    if len(calls) == 2 and not serve._lock.locked():
-        break
-    _t.sleep(0.01)
-assert serve.gists()[0]["id"] == "2" and len(calls) == 2        # ...and replaced behind it
-assert serve.gists(refresh=True)[0]["id"] == "3"                # ↻ forces a fetch
+assert serve.gists()[0]["id"] == "1" and len(calls) == 1        # stale: a page load still never fetches
+assert serve.gists(refresh=True)[0]["id"] == "2"                # ↻ forces a fetch
 
 # update check: a new or edited gist on GitHub changes the version the page polls
 def wait_unlocked():
@@ -235,6 +242,11 @@ serve._checked[0] = 0
 serve.gh = lambda path, *a, **k: json.dumps([{"id": "b", "updated_at": "2026-11-05T02:00:00Z"}, {"id": "a", "updated_at": "2026-11-05T01:00:00Z"}])
 serve.version(); wait_unlocked()
 assert serve.version() == "2-b-2026-11-05T02:00:00Z"            # new gist: list reloaded, page sees a new version
+serve._list.update(at=_t.time() - serve.STALE_SECONDS - 1, gists=[{"id": "a", "updated_at": "2026-11-05T01:00:00Z"}])
+serve._checked[0] = 0
+serve.gh = lambda path, *a, **k: "[]"                            # nothing newer, but the list is stale
+serve.version(); wait_unlocked()
+assert serve.version() == "2-b-2026-11-05T02:00:00Z"            # stale: full reload (catches deletes on github.com)
 serve._checked[0] = _t.time()
 serve.gh = lambda *a, **k: (_ for _ in ()).throw(AssertionError("checked GitHub too soon"))
 serve.version()                                                  # within 60 s: no GitHub call

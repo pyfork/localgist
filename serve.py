@@ -45,7 +45,8 @@ CHECK_SECONDS = 60  # how often an open page may trigger a GitHub update check
 _checked = [0.0]
 
 _list = {"at": 0.0, "gists": []}
-_gone = set()  # ids deleted this run; a refresh that began before the delete must not bring them back
+_gone = {}  # id -> when we deleted it; a refresh that began before the delete must not bring it back
+GONE_GRACE = 60  # a list fetch that starts this long after a delete no longer needs that id filtered
 _lock = threading.Lock()  # one list fetch at a time
 _wlock = threading.Lock()  # a refresh's write and a delete never interleave
 _last_hit = [time.clock_gettime(CLOCK)]
@@ -90,30 +91,21 @@ def fetch_all():
 
 
 def _load():
+    started = time.time()
     fresh = fetch_all()
     with _wlock:
         _list.update(at=time.time(), gists=[g for g in fresh if g["id"] not in _gone])
-
-
-def _load_in_background():
-    try:
-        _load()
-    except Exception as e:  # keep serving the old list; next stale request retries
-        print(f"localgist: background refresh failed: {e}", file=sys.stderr, flush=True)
-    finally:
-        _lock.release()
+        for gid in [k for k, t in _gone.items() if t < started - GONE_GRACE]:  # this fetch began well after that delete
+            del _gone[gid]
 
 
 def gists(refresh=False):
-    """Only the very first load (or ↻) waits. A stale list is served at once and refreshed behind it."""
+    """Only the very first load (or ↻) fetches here. Keeping the list fresh is the page's update check
+    (version(), a POST with the token), so a page load from another site never spends GitHub quota."""
     if refresh or not _list["at"]:
         with _lock:
             if refresh or not _list["at"]:  # the start-up warm-up may have filled it while we waited
                 _load()
-    elif time.time() - _list["at"] > STALE_SECONDS and _lock.acquire(blocking=False):
-        old = _list["gists"]
-        threading.Thread(target=_load_in_background, daemon=True).start()
-        return old
     return _list["gists"]
 
 
@@ -124,7 +116,7 @@ def delete_gist(gid):
     """Delete on GitHub (permanent), then drop it from the list and the content index."""
     gh(f"/gists/{gid}", method="DELETE")
     with _wlock:
-        _gone.add(gid)
+        _gone[gid] = time.time()
         _list["gists"] = [g for g in _list["gists"] if g["id"] != gid]
     _content.pop(gid, None)
     return signature(_list["gists"])
@@ -146,7 +138,7 @@ def signature(items):
 def _check_for_update():
     try:
         cur = _list["gists"]
-        if not cur:
+        if not cur or time.time() - _list["at"] > STALE_SECONDS:  # full reload also catches deletes and renames on github.com
             return _load()
         # one tiny call: only gists updated at or after our newest one come back
         newer = json.loads(gh(f'/gists?per_page=5&since={cur[0]["updated_at"]}'))
@@ -255,18 +247,9 @@ def read_prefs(cookie_header):
         return p
     if "lg" in c:  # untrusted input: keep only known values
         q = parse_qs(unquote(c["lg"].value))
-        if (f := q.get("font", [""])[0]) in FONTS:
-            p["font"] = f
-        if (pl := q.get("palette", [""])[0]) in PALETTES:
-            p["palette"] = pl
-        if (th := q.get("theme", [""])[0]) in THEMES:
-            p["theme"] = th
-        if (m := q.get("mast", [""])[0]) in MASTS:
-            p["mast"] = m
-        if (t := q.get("top", [""])[0]) in TOPS:
-            p["top"] = t
-        if (o := q.get("open", [""])[0]) in OPENS:
-            p["open"] = o
+        for key, allowed in (("font", FONTS), ("palette", PALETTES), ("theme", THEMES), ("mast", MASTS), ("top", TOPS), ("open", OPENS)):
+            if (v := q.get(key, [""])[0]) in allowed:
+                p[key] = v
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
             p["in"] = ",".join(s)
     return p
@@ -741,7 +724,7 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
  draw()}
 let V=$("d").dataset.v;const u=$("upd");
 const check=()=>{if(document.hidden||!u.hidden)return;post("/api/version").then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
-setInterval(check,60000);document.addEventListener("visibilitychange",check);
+setInterval(check,60000);check();document.addEventListener("visibilitychange",check);
 u.addEventListener("click",()=>location.reload());
 document.addEventListener("click",e=>{const a=e.target.closest(".refresh");if(!a)return;e.preventDefault();say("Reloading from GitHub\u2026");
  post("/api/refresh").then(r=>{if(!r.ok)throw new Error(r.status);location.href=a.href}).catch(()=>say("Could not reload from GitHub"))});
@@ -990,6 +973,12 @@ def page_num(s):
 class Handler(BaseHTTPRequestHandler):
     timeout = 30  # a stalled browser connection frees its thread after 30 s
 
+    def forbid(self):
+        """403, with one log line so a refused request is not silent."""
+        print(f"localgist: refused {self.command} {urlsplit(self.path).path!r} (Origin {self.headers.get('Origin')!r}, "
+              f"Sec-Fetch-Site {self.headers.get('Sec-Fetch-Site')!r})", file=sys.stderr, flush=True)
+        return self.send(403, "forbidden", "text/plain")
+
     @staticmethod
     def failed(e):
         """(status, message) for an error. Only network trouble and bad JSON are GitHub's fault (502);
@@ -1014,7 +1003,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Pages only. Another site may load one; it serves the cached list and cannot force a GitHub fetch."""
         if not host_ok(self.headers.get("Host", "")):  # blocks DNS-rebinding pages
-            return self.send(403, "forbidden", "text/plain")
+            return self.forbid()
         url = urlsplit(self.path)
         if url.path == "/ping":  # lets a second `pyup` find this server; does not count as use
             return self.send(200, "localgist", "text/plain")
@@ -1032,7 +1021,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Everything that can spend GitHub quota (refresh, update check, content search): our own page only."""
         if not same_origin(self.headers):  # same checks as delete: Host, Origin, Sec-Fetch-Site, CSRF token
-            return self.send(403, "forbidden", "text/plain")
+            return self.forbid()
         url = urlsplit(self.path)
         if url.path == "/api/version":  # polled by an open page; does not count as use, so idle stop still works
             return self.send(200, version(), "text/plain")
@@ -1050,7 +1039,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools
-            return self.send(403, "forbidden", "text/plain")
+            return self.forbid()
         m = re.fullmatch(r"/api/gists/([0-9a-f]{1,64})", urlsplit(self.path).path)
         if not m:
             return self.send(404, "not found", "text/plain")

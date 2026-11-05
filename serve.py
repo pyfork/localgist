@@ -20,6 +20,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 import urllib.request
 import webbrowser
 from datetime import datetime
@@ -989,6 +990,15 @@ def page_num(s):
 class Handler(BaseHTTPRequestHandler):
     timeout = 30  # a stalled browser connection frees its thread after 30 s
 
+    @staticmethod
+    def failed(e):
+        """(status, message) for an error. Only network trouble and bad JSON are GitHub's fault (502);
+        anything else is a localgist bug (500), logged with its traceback so it is not passed off as GitHub."""
+        if isinstance(e, (OSError, json.JSONDecodeError)):  # URLError, HTTPError, timeouts, refused connections
+            return 502, f"GitHub fetch failed: {e}"
+        traceback.print_exc()
+        return 500, f"localgist error: {e!r}"
+
     def send(self, code, body, ctype="text/html; charset=utf-8"):
         data = body.encode()
         self.send_response(code)
@@ -1015,8 +1025,9 @@ class Handler(BaseHTTPRequestHandler):
         p = page_num(q.get("p", ["1"])[0])  # parsed outside the try, so bad input is never called a GitHub failure
         try:
             return self.send(200, index_page(p, q.get("sort", ["updated"])[0], read_prefs(self.headers.get("Cookie"))))
-        except Exception as e:  # GitHub down, token expired, etc.
-            return self.send(502, shell("error", f"<div class='wrap'><p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p></div>"))
+        except Exception as e:
+            code, msg = self.failed(e)
+            return self.send(code, shell("error", f"<div class='wrap'><p style='padding:24px'>{html.escape(msg)}</p></div>"))
 
     def do_POST(self):
         """Everything that can spend GitHub quota (refresh, update check, content search): our own page only."""
@@ -1035,7 +1046,7 @@ class Handler(BaseHTTPRequestHandler):
             scopes = [s for s in q.get("in", ["desc"])[0].split(",") if s in SCOPES] or ["desc"]
             return self.send(200, json.dumps(search(q.get("q", [""])[0][:200], scopes)), "application/json")
         except Exception as e:
-            return self.send(502, f"GitHub said: {e}", "text/plain")
+            return self.send(*self.failed(e), "text/plain")
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools
@@ -1047,7 +1058,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             return self.send(200, json.dumps({"ok": True, "v": delete_gist(m[1])}), "application/json")
         except Exception as e:
-            return self.send(502, f"GitHub said: {e}", "text/plain")
+            return self.send(*self.failed(e), "text/plain")
 
 
 def watch_idle(server):

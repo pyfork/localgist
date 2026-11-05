@@ -1,5 +1,8 @@
 """Self-check: python3 test_serve.py (no network, no token)."""
 import base64
+import contextlib
+import io
+import urllib.error
 import hashlib
 import json
 import socket
@@ -128,6 +131,17 @@ try:
     assert req("GET", "/?p=" + "9" * 5000, {"Host": host})[::2] == (200, [1])         # past int()'s digit limit
     assert req("GET", "/?p=2", {"Host": host})[::2] == (200, [2])
     assert req("GET", "/search?q=x", {"Host": host})[0] == req("GET", "/version", {"Host": host})[0] == 404
+    # only GitHub trouble is called a GitHub failure; our own bug is a 500 with its real name
+    def boom(e):
+        def f(*a): raise e
+        return f
+    serve.index_page = boom(urllib.error.URLError("down"))
+    st, body, _ = req("GET", "/", {"Host": host})
+    assert st == 502 and b"GitHub fetch failed" in body, body
+    serve.index_page = boom(KeyError("oops"))
+    with contextlib.redirect_stderr(io.StringIO()) as err:
+        st, body, _ = req("GET", "/", {"Host": host})
+    assert st == 500 and b"localgist error: KeyError" in body and b"GitHub" not in body and "Traceback" in err.getvalue(), body
 finally:
     serve.index_page = real_index
 # POST: refresh, update check and search spend GitHub quota, so only our page (same origin + CSRF token) may ask
@@ -145,6 +159,8 @@ try:
     assert json.loads(req("POST", "/api/search?q=x", ok_headers)[1])["ids"] == []
     assert req("POST", "/api/version", ok_headers)[:2] == (200, b"1-cd2-1")
     assert req("POST", "/api/nope", ok_headers)[0] == 404
+    serve.fetch_all = boom(TimeoutError("slow"))
+    assert req("POST", "/api/refresh", ok_headers)[:2] == (502, b"GitHub fetch failed: slow")
 finally:
     serve.fetch_all = real_fetch
 srv.shutdown(); srv.server_close(); serve.PORT = old_port

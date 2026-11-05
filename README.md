@@ -80,6 +80,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 ## Security
 
 - Listens on `127.0.0.1` only; any other `Host` header gets 403 (blocks DNS rebinding).
+- Anything that can spend your GitHub quota (Reload from GitHub, the update check, content search) is a POST with the same checks as Delete: matching `Origin`, a same-origin fetch and the per-run token. Another website can open the list page, but it only gets the cached list.
 - Token comes from `gh auth token` at start, held in memory, never written to disk.
 - Gist list and content index live in memory only; nothing about your gists is stored in this repo.
 - Strict CSP: only the one page script may run (pinned by hash), it can only talk to localgist, images only from localgist, fonts only from Google Fonts, no framing, no forms.

@@ -44,7 +44,9 @@ CHECK_SECONDS = 60  # how often an open page may trigger a GitHub update check
 _checked = [0.0]
 
 _list = {"at": 0.0, "gists": []}
+_gone = set()  # ids deleted this run; a refresh that began before the delete must not bring them back
 _lock = threading.Lock()  # one list fetch at a time
+_wlock = threading.Lock()  # a refresh's write and a delete never interleave
 _last_hit = [time.clock_gettime(CLOCK)]
 
 
@@ -87,7 +89,9 @@ def fetch_all():
 
 
 def _load():
-    _list.update(at=time.time(), gists=fetch_all())
+    fresh = fetch_all()
+    with _wlock:
+        _list.update(at=time.time(), gists=[g for g in fresh if g["id"] not in _gone])
 
 
 def _load_in_background():
@@ -118,7 +122,9 @@ CSRF = secrets.token_urlsafe(24)  # per run; a page from another site cannot rea
 def delete_gist(gid):
     """Delete on GitHub (permanent), then drop it from the list and the content index."""
     gh(f"/gists/{gid}", method="DELETE")
-    _list["gists"] = [g for g in _list["gists"] if g["id"] != gid]
+    with _wlock:
+        _gone.add(gid)
+        _list["gists"] = [g for g in _list["gists"] if g["id"] != gid]
     _content.pop(gid, None)
     return signature(_list["gists"])
 
@@ -153,7 +159,7 @@ def _check_for_update():
 
 def version():
     """Signature of the list the server holds now. Checks GitHub at most once a minute,
-    and only while a page is open and asking (the browser polls /version)."""
+    and only while a page is open and asking (the browser polls /api/version)."""
     if time.time() - _checked[0] > CHECK_SECONDS and _lock.acquire(blocking=False):
         _checked[0] = time.time()
         threading.Thread(target=_check_for_update, daemon=True).start()
@@ -310,7 +316,7 @@ def search_data(items, field="updated_at"):
          int(g.get("comments") or 0), created_month(g)]
         for g in items
     ]
-    return json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
+    return json.dumps(rows, ensure_ascii=False).replace("<", "\\u003c")  # every <, so "<!--<script>" cannot end the block early
 
 
 DARK = ("color-scheme:dark;--page:#0f1012;--surface:#17181b;--fg:#ece6d8;--muted:#a59e8f;--faint:#746e62;--line:#2a2b2f;--rule:#ece6d8;"
@@ -578,8 +584,10 @@ FONT_CSS = {"source": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wg
 
 # One script for the list page, pinned in the CSP by its hash.
 # Search: Cmd/Ctrl+F focuses it (again inside the box: the browser's own find). Description and
-# file-name matches run here; content matches come from /search. Rows are built with textContent only.
+# file-name matches run here; content matches come from /api/search. Rows are built with textContent only.
 JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
+// anything that can spend GitHub quota is a POST with the per-run token, which another site cannot read or send
+const H={"X-CSRF":$("d").dataset.csrf},post=u=>fetch(u,{method:"POST",headers:H,cache:"no-store"});
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
@@ -609,7 +617,7 @@ function run(){const raw=q.value.trim(),s=raw.toLowerCase(),sc=scope(),my=++seq;
  const w=s.split(/\s+/);
  if(!sc.includes("content")){show(base.filter(g=>{const h=(sc.includes("desc")?g[4]:"")+" "+(sc.includes("file")?g[5]:"");return w.every(x=>h.includes(x))}),raw);return}
  st.textContent="Searching contents…";
- timer=setTimeout(()=>fetch("/search?"+new URLSearchParams({q:raw,in:sc.join(",")}),{cache:"no-store"}).then(r=>r.json()).then(j=>{if(my!==seq)return;
+ timer=setTimeout(()=>post("/api/search?"+new URLSearchParams({q:raw,in:sc.join(",")})).then(r=>r.json()).then(j=>{if(my!==seq)return;
   const ids=new Set(j.ids);show(base.filter(g=>ids.has(g[0])),raw);
   st.textContent=j.ready?"":`Indexing contents… ${j.done} of ${j.total}`;if(!j.ready)timer=setTimeout(run,800)})
   .catch(()=>{if(my===seq)st.textContent="Content search failed"}),150)}
@@ -618,7 +626,7 @@ q.addEventListener("keydown",e=>{if(e.key==="Escape"){q.value="";run();q.blur()}
  else if(e.key==="Enter"&&q.value.trim()){const a=document.querySelector("main a");if(a){if(prefs.open==="new")window.open(a.href,"_blank","noopener,noreferrer");else location.href=a.href}}});
 document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="f"&&document.activeElement!==q&&!$("settings").open){e.preventDefault();q.focus();q.select()}});
 boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].checked=true;prefs.in=scope().join(",");store();
- if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
+ if(b.value==="content"&&b.checked)post("/api/search?in=content").catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
 const KEYS=["palette","font","theme","mast","top","open"];
@@ -660,7 +668,7 @@ function askDelete(btn){if(queued.has(btn.dataset.id))return;cancel();const tr=b
  btn.parentElement.append(box);tr.classList.add("confirming");pending={tr,box,btn,id:btn.dataset.id,name:tr.querySelector("a").textContent};box.querySelector(".rc-no").focus()}
 // Yes starts a 9 s countdown with Undo; leaving or reloading the page sends the delete at once (keepalive).
 const queued=new Map(),WAIT=9;
-const send=(o,keep)=>fetch("/api/gists/"+encodeURIComponent(o.id),{method:"DELETE",headers:{"X-CSRF":$("d").dataset.csrf},keepalive:!!keep});
+const send=(o,keep)=>fetch("/api/gists/"+encodeURIComponent(o.id),{method:"DELETE",headers:H,keepalive:!!keep});
 function confirmDelete(){const o=pending;if(!o)return;pending=null;queued.set(o.id,o);o.left=WAIT;
  o.box.innerHTML='<span class="rc-q"></span><button class="rc-undo" type=button>Undo</button>';
  const qq=o.box.querySelector(".rc-q"),tick=()=>{qq.textContent=`Deleting in ${o.left}s`};tick();o.box.querySelector(".rc-undo").focus();
@@ -731,9 +739,11 @@ if(fig){const M=JSON.parse(fig.dataset.months),svg=fig.querySelector("svg.chart"
  rs.addEventListener("click",()=>{a=A0;b=B0;if(sel){sel=null;run()}draw();gl.focus()});
  draw()}
 let V=$("d").dataset.v;const u=$("upd");
-const check=()=>{if(document.hidden||!u.hidden)return;fetch("/version",{cache:"no-store"}).then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
+const check=()=>{if(document.hidden||!u.hidden)return;post("/api/version").then(r=>r.ok?r.text():V).then(v=>{if(v!==V)u.hidden=false}).catch(()=>{})};
 setInterval(check,60000);document.addEventListener("visibilitychange",check);
 u.addEventListener("click",()=>location.reload());
+document.addEventListener("click",e=>{const a=e.target.closest(".refresh");if(!a)return;e.preventDefault();say("Reloading from GitHub\u2026");
+ post("/api/refresh").then(r=>{if(!r.ok)throw new Error(r.status);location.href=a.href}).catch(()=>say("Could not reload from GitHub"))});
 // back to top: shows once the first screen has scrolled away
 const tt=$("totop");addEventListener("scroll",()=>{tt.hidden=scrollY<innerHeight},{passive:true});
 tt.addEventListener("click",()=>{scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});const f=document.querySelector("main a");if(f)f.focus({preventScroll:true})})})();  // focus moves to the first gist, not the search box (no phone keyboard)"""
@@ -764,7 +774,7 @@ def comments(g):
 
 
 def actions(g):
-    url, t = html.escape(gist_url(g)), html.escape(title(g))
+    t = html.escape(title(g))
     return (f'<span class="acts"><button class="ib del" type=button data-id="{g["id"]}" aria-label="Delete {t}" title="Delete">{TRASH}</button></span>')
 
 
@@ -908,10 +918,10 @@ def month_chart(items, now=None):
 
 
 
-def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
+def index_page(page, sort="updated", prefs=DEFAULT_PREFS):
     sort = sort if sort in SORTS else "updated"
     field = f"{sort}_at"
-    held = gists(refresh)  # the update check compares against this list, whatever the sort
+    held = gists()  # the update check compares against this list, whatever the sort
     months = all_months(held)
     items = sort_items(held, sort)
     qs = "" if sort == "updated" else f"&sort={sort}"
@@ -932,7 +942,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<label class="chip"><input type=checkbox value={k}{" checked" if k in on else ""}>{CHECK}{v}</label>'
         for k, v in SCOPES.items()
     )
-    reload = f'<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a>'
+    reload = f'<a class="refresh" href="/?p={page}{qs}" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a>'
     return shell(
         "localgist",
         '<input type=radio name=t id=t1 checked aria-label="Show first column">'
@@ -949,7 +959,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<div class="grip r" role=slider tabindex=0 aria-label="End of period" aria-valuemin=0 aria-valuemax={len(months) - 1}></div></div>'
         f'<button class="preset" type=button aria-label="Reset the period to the last 24 months" title="Reset period">{XMARK}</button></div>'
         '<p class="chart-hint">Drag the handles to resize the period, or the middle to move it. Click a bar to list that month.</p></figure></div></div>'
-                f'<div class="top"><div class="bar"><header><span class="brandrow"><a class="brand" href="/">localgist</a>{reload}</span>'
+        f'<div class="top"><div class="bar"><header><span class="brandrow"><a class="brand" href="/">localgist</a>{reload}</span>'
         f'<label class="search">{ICON}<input id=q type=search placeholder="Search {len(items)} gists" '
         'autocomplete=off spellcheck=false aria-label="Search gists"><kbd id=k>⌘F</kbd></label>'
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
@@ -968,6 +978,14 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
     )
 
 
+def page_num(s):
+    """?p= as a number; anything int() rejects (a superscript 2, 5000 digits, junk) is page 1. index_page clamps the range."""
+    try:
+        return int(s)
+    except ValueError:
+        return 1
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 30  # a stalled browser connection frees its thread after 30 s
 
@@ -984,26 +1002,40 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        """Pages only. Another site may load one; it serves the cached list and cannot force a GitHub fetch."""
         if not host_ok(self.headers.get("Host", "")):  # blocks DNS-rebinding pages
             return self.send(403, "forbidden", "text/plain")
         url = urlsplit(self.path)
-        if url.path == "/version":  # polled by an open page; does not count as use, so idle stop still works
-            return self.send(200, version(), "text/plain")
         if url.path == "/ping":  # lets a second `pyup` find this server; does not count as use
             return self.send(200, "localgist", "text/plain")
         _last_hit[0] = time.clock_gettime(CLOCK)
-        q = parse_qs(url.query)
-        try:
-            if url.path == "/":
-                p = q.get("p", ["1"])[0]
-                prefs = read_prefs(self.headers.get("Cookie"))
-                return self.send(200, index_page(int(p) if p.isdigit() else 1, "refresh" in q, q.get("sort", ["updated"])[0], prefs))
-            if url.path == "/search":
-                scopes = [s for s in q.get("in", ["desc"])[0].split(",") if s in SCOPES] or ["desc"]
-                return self.send(200, json.dumps(search(q.get("q", [""])[0][:200], scopes)), "application/json")
+        if url.path != "/":
             return self.send(404, "not found", "text/plain")
+        q = parse_qs(url.query)
+        p = page_num(q.get("p", ["1"])[0])  # parsed outside the try, so bad input is never called a GitHub failure
+        try:
+            return self.send(200, index_page(p, q.get("sort", ["updated"])[0], read_prefs(self.headers.get("Cookie"))))
         except Exception as e:  # GitHub down, token expired, etc.
             return self.send(502, shell("error", f"<div class='wrap'><p style='padding:24px'>GitHub fetch failed: {html.escape(str(e))}</p></div>"))
+
+    def do_POST(self):
+        """Everything that can spend GitHub quota (refresh, update check, content search): our own page only."""
+        if not same_origin(self.headers):  # same checks as delete: Host, Origin, Sec-Fetch-Site, CSRF token
+            return self.send(403, "forbidden", "text/plain")
+        url = urlsplit(self.path)
+        if url.path == "/api/version":  # polled by an open page; does not count as use, so idle stop still works
+            return self.send(200, version(), "text/plain")
+        if url.path not in ("/api/refresh", "/api/search"):
+            return self.send(404, "not found", "text/plain")
+        _last_hit[0] = time.clock_gettime(CLOCK)
+        q = parse_qs(url.query)
+        try:
+            if url.path == "/api/refresh":
+                return self.send(200, json.dumps({"v": signature(gists(refresh=True))}), "application/json")
+            scopes = [s for s in q.get("in", ["desc"])[0].split(",") if s in SCOPES] or ["desc"]
+            return self.send(200, json.dumps(search(q.get("q", [""])[0][:200], scopes)), "application/json")
+        except Exception as e:
+            return self.send(502, f"GitHub said: {e}", "text/plain")
 
     def do_DELETE(self):
         if not same_origin(self.headers):  # blocks other sites, rebinding pages and stray tools

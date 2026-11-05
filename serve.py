@@ -482,8 +482,8 @@ td.t{width:calc(68px * var(--scale));padding:5px 8px 0 4px;text-align:right;colo
 td.act{width:0;padding:0;overflow:visible;white-space:nowrap}
 .acts{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 2px 0 18px;background:linear-gradient(90deg,transparent,var(--hover) 16px);opacity:0}
 tr:hover .acts,tr:focus-within .acts{opacity:1}
-td.cm{width:34px;padding:4px 0 0 6px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
-td.cm span{display:inline-flex;align-items:center;gap:2px}td.cm .hi{width:13px;height:13px}
+td a{display:inline-block;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+.cd{display:inline-block;width:5px;height:5px;margin-left:3px;border-radius:50%;background:var(--link);vertical-align:top}  /* superscript dot: this gist has comments */
 .ib{width:26px;height:22px;display:inline-grid;place-items:center;padding:0;border:0;border-radius:6px;background:none;color:var(--faint);cursor:pointer;opacity:0}
 .ib .hi{width:15px;height:15px}
 .ib.copy{width:65px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font:600 11px/1 var(--ff)}  /* 2.5x the delete button: the safe action is the easy target */
@@ -549,9 +549,9 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .scope .mchip{display:inline-flex}
  .c2,#t2:checked~.wrap .c1{display:none}#t2:checked~.wrap .c2{display:block}
  td{height:48px;padding:8px 0;white-space:normal}
- td a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ td a{display:-webkit-inline-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td.t{width:calc(68px * var(--scale));font-size:calc(12px * var(--scale));padding:10px 8px 0 0}
- td.act{display:none}td.cm{padding-top:10px}  /* copy and delete are desktop-only */
+ td.act{display:none}  /* copy and delete are desktop-only */
  .toast{bottom:16px;width:calc(100% - 32px);justify-content:center}
 }
 """
@@ -574,7 +574,6 @@ GEAR = hero(  # cog-6-tooth
 REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>')  # arrow-path
 COPY = hero('<path d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z"/>')  # clipboard-document
 TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
-CHAT = hero('<path d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/>')  # chat-bubble-left
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
 FONT_CSS = {"source": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap",
@@ -597,8 +596,7 @@ function table(list,msg){if(!list.length){const p=document.createElement("div");
  const t=document.createElement("table");for(const g of list){const r=t.insertRow(),c=r.insertCell(),a=document.createElement("a");
  c.className="t";c.textContent=g[2];
  a.href=g[1];if(prefs.open==="new")a.target="_blank";a.rel="noopener noreferrer";a.textContent=a.title=g[3];r.insertCell().append(a);
- const cm=r.insertCell();cm.className="cm";if(g[6]){const sp=document.createElement("span");sp.title=sp.ariaLabel=`${g[6]} comment${g[6]===1?"":"s"}`;
-  sp.innerHTML=$("chat-icon").innerHTML;sp.append(g[6]);cm.append(sp)}
+ if(g[6]){const d=document.createElement("sup");d.className="cd";d.role="img";d.title=d.ariaLabel=`${g[6]} comment${g[6]===1?"":"s"}`;a.after(d)}
  const x=r.insertCell();x.className="act";x.append($("act-tpl").content.cloneNode(true));
  const[cp,dl]=x.querySelectorAll("button");cp.dataset.u=g[1];cp.ariaLabel="Copy link to "+g[3];dl.dataset.id=g[0];dl.ariaLabel="Delete "+g[3]}return t}
 function show(m,s){const L=m.slice(0,N),R=m.slice(N,2*N);
@@ -754,7 +752,8 @@ def shell(name, body, prefs=DEFAULT_PREFS, script=False):
 
 def comments(g):
     n = int(g.get("comments") or 0)
-    return f'<span title="{n} comment{"s" * (n != 1)}" aria-label="{n} comment{"s" * (n != 1)}">{CHAT}{n}</span>' if n else ""
+    label = f'{n} comment{"s" * (n != 1)}'
+    return f'<sup class="cd" role=img title="{label}" aria-label="{label}"></sup>' if n else ""
 
 
 def actions(g):
@@ -771,8 +770,8 @@ def rows(items, field="updated_at", open_in="same"):
         t = html.escape(title(g))
         out.append(
             f'<tr><td class="t">{stamp(g[field])}</td>'
-            f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a></td>'
-            f'<td class="cm">{comments(g)}</td><td class="act">{actions(g)}</td></tr>'
+            f'<td><a href="{html.escape(gist_url(g))}"{target} rel="noopener noreferrer" title="{t}">{t}</a>{comments(g)}</td>'
+            f'<td class="act">{actions(g)}</td></tr>'
         )
     return f'<table>{"".join(out)}</table>'
 
@@ -822,7 +821,7 @@ def settings_dialog(prefs):
         )
     return (
         f'<template id=d-fonts {" ".join(f'data-{k}="{html.escape(u)}"' for k, u in FONT_CSS.items())}></template>'
-        f'<template id=ok-icon>{CHECK}</template><template id=chat-icon>{CHAT}</template>'
+        f'<template id=ok-icon>{CHECK}</template>'
         f'<template id=act-tpl>{actions({"id": "", "html_url": "", "description": "", "files": {}})}</template>'
         '<template id=confirm-tpl><div class="rc" role=group aria-label="Confirm delete">'
         '<span class="rc-q">Delete for good?</span>'

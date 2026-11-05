@@ -45,13 +45,13 @@ Needs Python 3 and a logged-in `gh` (`gh auth login`). No installs.
 
 ## Display settings
 
-The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a centered settings window:
+The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark settings window (60% of the screen, Gmail-help style):
 
 | Setting | Options | Default |
 |---|---|---|
 | Theme | System · Light · Dark | System |
 | Font | Arial · Source Sans 3 · Helvetica | Arial |
-| Text size | 3-step stepper: Small · Medium · Large | Medium |
+| Text size | Three A's of growing size (also in the header, where one tap applies and saves) | Medium |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).

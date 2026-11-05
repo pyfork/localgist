@@ -48,7 +48,8 @@ assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
 page = serve.index_page(1, False, "updated", {"font": "source", "size": "l", "theme": "dark", "open": "new", "in": "desc,content"})
-assert 'data-size="l" data-theme="dark"' in page and "<output id=sz-out aria-live=polite>Large</output>" in page
+assert 'data-size="l" data-theme="dark"' in page
+assert 'name=hsize value=l aria-label="Large text" checked' in page and 'name=size value=l aria-label="Large text" checked' in page
 assert 'class="ib copy" type=button data-u="https://gist.github.com/g1"' in page and 'data-id="g1"' in page
 assert f'data-csrf="{serve.CSRF}"' in page and "&quot;theme&quot;: &quot;system&quot;" in page  # Reset defaults ride on the dialog
 assert serve.comments({"comments": 3}).endswith("3</span>") and "3 comments" in serve.comments({"comments": 3})

@@ -223,7 +223,7 @@ def search(q, scopes):
 
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
-SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # stepper order; Medium is the default
+SIZES = {"s": "Small", "m": "Medium", "l": "Large"}  # smallest first; Medium is the default
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
 DEFAULT_PREFS = {"font": "arial", "size": "m", "theme": "system", "open": "same", "in": "desc"}
 DISPLAY_KEYS = ("font", "size", "theme", "open")  # what the settings window edits and Reset restores
@@ -346,16 +346,19 @@ kbd{position:absolute;right:8px;top:50%;translate:0 -50%;font:500 11px/1 ui-mono
 .icon-btn:hover{color:var(--fg)}.icon-btn.ghost{border-color:transparent;background:none}.icon-btn.ghost:hover{background:var(--hover)}
 .refresh{color:var(--muted)}.refresh .hi{width:16px;height:16px}.refresh:visited{color:var(--muted)}.refresh:hover{color:var(--fg)}
 .search svg.hi{width:16px;height:16px;stroke:var(--faint)}
-dialog.modal{width:min(440px,calc(100% - 32px));max-height:calc(100% - 32px);padding:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--fg);box-shadow:var(--pop);overflow:auto}
-dialog.modal::backdrop{background:rgb(10 12 16 / .5);backdrop-filter:blur(2px)}
+dialog.modal{DARK;width:min(60vw,1100px);min-width:min(640px,calc(100% - 32px));max-height:calc(100% - 48px);padding:0;border:1px solid rgb(255 255 255 / .08);border-radius:14px;
+ --surface:#2b2d31;--field:#1f2124;background:rgb(32 33 36 / .96);color:var(--fg);box-shadow:0 24px 80px rgb(0 0 0 / .55);overflow:auto}  /* Gmail-help style: always a dark panel */
+dialog.modal::backdrop{background:rgb(0 0 0 / .62)}
 dialog.modal[open]{animation:pop .16s ease-out}
 @keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}}
-.m-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 12px 20px;border-bottom:1px solid var(--line)}
-.m-title{font-size:15px;font-weight:700}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 16px 32px;border-bottom:1px solid var(--line)}
+.m-title{font-size:20px;font-weight:600;letter-spacing:-.01em}
 .m-body{padding:20px 24px 22px;text-align:center}
-.m-body fieldset{border:0;margin:0;padding:0;min-width:0}.m-body fieldset+fieldset{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
-.m-body legend{padding:0;margin:0 auto 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.m-foot{padding:12px 16px 12px 20px;border-top:1px solid var(--line);background:var(--field);border-radius:0 0 16px 16px}
+.m-body fieldset{border:0;margin:0;padding:0;min-width:0}
+.m-body.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 48px;padding:34px 40px 36px}
+.m-body.grid .seg{max-width:420px;margin:0 auto}.m-body .seg span{height:38px;font-size:14px}
+.m-body legend{padding:0;margin:0 auto 14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.m-foot{padding:14px 20px 14px 32px;border-top:1px solid var(--line);background:rgb(0 0 0 / .18)}
 .m-row{display:flex;align-items:center;gap:8px}
 .m-msg{margin-right:auto;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
 .m-msg.ok{color:#1f8a4c}.m-msg.dirty{color:var(--fg);font-weight:600}
@@ -446,13 +449,15 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
 .rc button{height:20px;padding:0 9px;border-radius:5px;font:600 12px/1 var(--ff);cursor:pointer;border:1px solid var(--field-line);background:var(--surface);color:var(--fg)}
 .rc .rc-yes{background:#c62828;border-color:#c62828;color:#fff}.rc button:hover{filter:brightness(1.08)}.rc button:disabled{opacity:.6;cursor:default}
 .m-row.end{justify-content:flex-end}
-.stepper{display:inline-flex;align-items:center;gap:12px}
-.stepper button{width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid var(--field-line);border-radius:8px;background:var(--field);color:var(--fg);cursor:pointer}
-.stepper button:hover:not(:disabled){border-color:var(--fg)}.stepper button:disabled{opacity:.35;cursor:default}
-.stepper .hi{width:16px;height:16px}
-.sz{min-width:88px;display:grid;justify-items:center;gap:5px}
-.sz output{font-size:13px;font-weight:600}
-.dots{display:flex;gap:5px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--field-line)}.dots i.on{background:var(--fg)}
+.sizeseg{display:inline-flex;align-items:flex-end;padding:2px;gap:2px;background:var(--field);border:1px solid var(--field-line);border-radius:8px}
+.sizeseg label{position:relative;cursor:pointer}
+.sizeseg input{position:absolute;opacity:0;pointer-events:none}
+.sizeseg span{display:grid;place-items:end center;width:30px;height:28px;padding-bottom:5px;border-radius:6px;font-family:Georgia,"Times New Roman",serif;font-weight:600;line-height:1;color:var(--muted)}
+.sizeseg .a-s{font-size:11px}.sizeseg .a-m{font-size:14.5px}.sizeseg .a-l{font-size:19px}
+.sizeseg label:hover span{color:var(--fg)}
+.sizeseg label:has(input:checked) span{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .14)}
+.sizeseg label:has(input:focus-visible) span{outline:2px solid var(--focus);outline-offset:-1px}
+.m-body .sizeseg span{width:56px;height:38px;padding-bottom:7px}.m-body .sizeseg .a-s{font-size:13px}.m-body .sizeseg .a-m{font-size:18px}.m-body .sizeseg .a-l{font-size:24px}
 .btn.link{border-color:transparent;background:none;color:var(--muted);padding:0 8px}.btn.link:hover{color:var(--fg);border-color:transparent;text-decoration:underline}
 .note{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:7;padding:9px 14px;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;box-shadow:0 8px 28px rgb(0 0 0 / .25)}
 .toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border:0;border-radius:999px;background:var(--fg);color:var(--surface);font-weight:600;font-size:13px;line-height:1.2;box-shadow:0 8px 28px rgb(0 0 0 / .25);cursor:pointer;animation:rise .2s ease-out}
@@ -469,7 +474,10 @@ tr.confirming td{background:color-mix(in srgb,#c62828 9%,var(--surface))}
  .sort{order:4}.sort a,.sort b{height:34px;padding:0 10px;font-size:13px}
  .meta{gap:8px}
  kbd{display:none}
- .m-row.ask{flex-wrap:wrap}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
+ .m-row.ask{flex-wrap:wrap}
+ dialog.modal{width:calc(100% - 24px);min-width:0}.m-body.grid{grid-template-columns:1fr;gap:26px;padding:24px 18px}
+ .m-head{padding:14px 12px 12px 18px}.m-foot{padding:12px 14px 12px 18px}
+ .hsize{display:none}.ask .m-msg{flex-basis:100%;margin-bottom:4px}
  .scope{display:none;padding:8px 16px;gap:6px;overflow-x:auto}.scope>span:first-child{display:none}
  .top:focus-within .scope,.top:has(#q:not(:placeholder-shown)) .scope{display:flex}
  .tabs{display:flex;border-bottom:1px solid var(--line)}
@@ -514,8 +522,6 @@ REFRESH = hero('<path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992
 COPY = hero('<path d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z"/>')  # clipboard-document
 TRASH = hero('<path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>')  # trash
 CHAT = hero('<path d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/>')  # chat-bubble-left
-MINUS = hero('<path d="M5 12h14"/>')  # minus
-PLUS = hero('<path d="M12 4.5v15m7.5-7.5h-15"/>')  # plus
 XMARK = hero('<path d="M6 18 18 6M6 6l12 12"/>')  # x-mark
 CHECK = hero('<path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>', 16)  # check (16 solid)
 SOURCE_SANS_CSS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap"
@@ -567,27 +573,26 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["font","size","theme","open"],SZ=["s","m","l"],SZN={s:"Small",m:"Medium",l:"Large"},stepper=dlg.querySelector(".stepper");
+const KEYS=["font","size","theme","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open"),size:stepper.dataset.v});
+const form=()=>({font:pick("font"),theme:pick("theme"),open:pick("open"),size:pick("size")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function showSize(v){stepper.dataset.v=v;const i=SZ.indexOf(v);$("sz-out").textContent=SZN[v];$("sz-dn").disabled=i===0;$("sz-up").disabled=i===SZ.length-1;
- stepper.querySelectorAll(".dots i").forEach((d,j)=>d.classList.toggle("on",j<=i))}
 function apply(p){root.dataset.font=p.font;root.dataset.size=p.size;root.dataset.theme=p.theme;targets(p.open);
  if(p.font==="source"&&!$("fsrc")){const l=document.createElement("link");l.id="fsrc";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap";document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
-function setForm(p){for(const k of["font","theme","open"])dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true;showSize(p.size)}
+function setForm(p){for(const k of KEYS)dlg.querySelector(`input[name=${k}][value=${p[k]}]`).checked=true}
 const changed=()=>{apply(form());justSaved=false;status();asking(false)};
-const step=d=>{const i=SZ.indexOf(stepper.dataset.v)+d;if(i>=0&&i<SZ.length){showSize(SZ[i]);changed()}};
 function asking(o){ask.hidden=!o;norm.hidden=o;if(o)$("m-keep").focus()}
 function close(){asking(false);dlg.close();gear.focus()}
 function tryClose(){if(!ask.hidden)return asking(false);if(dirty())asking(true);else close()}
-function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status()}
+function save(){saved=form();Object.assign(prefs,saved);store();justSaved=true;status();
+ const h=document.querySelector(`input[name=hsize][value=${saved.size}]`);if(h)h.checked=true}
 gear.addEventListener("click",()=>{setForm(saved);apply(saved);justSaved=false;status();asking(false);dlg.showModal()});
 dlg.addEventListener("change",changed);
-$("sz-dn").addEventListener("click",()=>step(-1));$("sz-up").addEventListener("click",()=>step(1));
+// header text size: one tap applies and saves at once (no window, nothing to confirm)
+document.querySelectorAll("input[name=hsize]").forEach(r=>r.addEventListener("change",()=>{prefs.size=saved.size=r.value;root.dataset.size=r.value;store()}));
 $("m-reset").addEventListener("click",()=>{setForm(JSON.parse(dlg.dataset.defaults));changed()});
 dlg.addEventListener("cancel",e=>{e.preventDefault();tryClose()});
 dlg.addEventListener("click",e=>{if(e.target===dlg)tryClose()});
@@ -720,6 +725,13 @@ def sort_items(items, sort):
     return items
 
 
+def size_picker(name, current):
+    """Text size as three letter A's of growing size (one tap, no +/- buttons). Used in the header and the settings window."""
+    return (f'<div class="sizeseg" role=radiogroup aria-label="Text size">' + "".join(
+        f'<label title="{v} text"><input type=radio name={name} value={k} aria-label="{v} text"{" checked" if current == k else ""}>'
+        f'<span class="a-{k}" aria-hidden=true>A</span></label>' for k, v in SIZES.items()) + '</div>')
+
+
 def settings_dialog(prefs):
     def seg(name, options):
         return "".join(
@@ -738,14 +750,10 @@ def settings_dialog(prefs):
         f' data-defaults="{html.escape(json.dumps({k: DEFAULT_PREFS[k] for k in DISPLAY_KEYS}))}">'
         f'<div class="m-head"><div id=m-title class="m-title">Display settings</div>'
         f'<button id=m-close class="icon-btn ghost" type=button aria-label="Close">{XMARK}</button></div>'
-        '<div class="m-body">'
+        '<div class="m-body grid">'
         f'<fieldset><legend>Theme</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
-        '<fieldset><legend>Text size</legend><div class="stepper">'
-        f'<button id=sz-dn type=button aria-label="Smaller text">{MINUS}</button>'
-        f'<div class="sz"><output id=sz-out aria-live=polite>{SIZES[prefs["size"]]}</output>'
-        f'<span class="dots" aria-hidden=true>{"".join("<i></i>" for _ in SIZES)}</span></div>'
-        f'<button id=sz-up type=button aria-label="Larger text">{PLUS}</button></div></fieldset>'
+        f'<fieldset><legend>Text size</legend>{size_picker("size", prefs["size"])}</fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '</div>'
@@ -872,6 +880,7 @@ def index_page(page, refresh, sort="updated", prefs=DEFAULT_PREFS):
         f'<nav class="sort" aria-label="Sort by date">{seg}</nav>'
         f'<div class="meta"><span id=cnt>{len(items)} gists</span>'
         f'<nav id=pg aria-label="Pages">{nav}<a class="refresh" href="/?p={page}{qs}&refresh=1" title="Reload from GitHub" aria-label="Reload from GitHub">{REFRESH}</a></nav></div>'
+        f'<div class="hsize">{size_picker("hsize", prefs["size"])}</div>'
         f'<button id=gear class="icon-btn" type=button aria-haspopup=dialog aria-controls=settings aria-label="Display settings" aria-keyshortcuts="Meta+K Control+K" title="Display settings (⌘K)">{GEAR}</button></header>'
         f'<div class="scope" role=group aria-label="Search in"><span>Search in</span>{chips}<button id=mchip class="mchip" type=button hidden></button><span id=st aria-live=polite></span></div>'
         f'<div class="tabs"><label for=t1>{r1}</label><label for=t2>{r2}</label></div></div>'

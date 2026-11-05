@@ -38,17 +38,19 @@ d = serve.search_data(evil)
 assert "</script" not in d and '"x<\\/script><b>"' in d and '"notes.md"' in d, d
 
 # prefs cookie: defaults, valid values kept, junk dropped
-assert serve.read_prefs(None) == {"palette": "finviz", "font": "arial", "theme": "system", "open": "same", "in": "desc"}
+assert serve.read_prefs(None) == {"palette": "finviz", "font": "arial", "theme": "system", "mast": "on", "open": "same", "in": "desc"}
 assert serve.read_prefs("lg=palette%3Dsage")["palette"] == "sage" and serve.read_prefs("lg=palette%3Devil")["palette"] == "finviz"
 assert serve.read_prefs("lg=font%3Dsource%26size%3Dl%26theme%3Ddark%26open%3Dnew%26in%3Dfile%252Ccontent") == \
-    {"palette": "finviz", "font": "source", "theme": "dark", "open": "new", "in": "file,content"}
+    {"palette": "finviz", "font": "source", "theme": "dark", "mast": "on", "open": "new", "in": "file,content"}
 assert serve.read_prefs('lg=font%3D%22%3E%3Cscript%3E%26time%3D7%26in%3Devil') == serve.DEFAULT_PREFS
 assert serve.read_prefs("lg=\x00;;;===") == serve.DEFAULT_PREFS
 
 # page renders with prefs applied server-side (no flash) and rows link to GitHub
 serve._list.update(at=_t.time(), gists=[{"id": "g1", "html_url": "https://gist.github.com/g1", "description": "Pay <b>",
                                           "files": {"pay.md": {}}, "updated_at": "2026-11-04T06:05:00Z", "created_at": "2026-11-01T00:00:00Z"}])
-page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "theme": "dark", "open": "new", "in": "desc,content"})
+page = serve.index_page(1, False, "updated", {"palette": "sage", "font": "source", "theme": "dark", "mast": "off", "open": "new", "in": "desc,content"})
+assert 'data-mast="off"' in page and 'name=mast value=off checked' in page
+assert serve.read_prefs("lg=mast%3Doff")["mast"] == "off" and serve.read_prefs("lg=mast%3Devil")["mast"] == "on"
 assert '<div class="strip"' in page and "<img" not in page and "/static/" not in page
 assert 'data-palette="sage"' in page and 'name=palette value=sage checked' in page
 assert page.count('class="pcard"') == len(serve.PALETTES) == 7

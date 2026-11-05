@@ -54,6 +54,7 @@ The gear button (top right), or **⌘K** (Ctrl K elsewhere), opens a wide dark s
 | Font | Arial · Source Sans 3 · Helvetica · IBM Plex Sans (the Finviz font) | Arial |
 
 Text is 12px in every font, the same as Finviz's news rows (14px on phones). Corners follow Finviz: 6px on controls and tables, 4px on small items.
+| Layout | Masthead · Minimal (hides the colour strip, nameplate and chart) | Masthead |
 | Clicks open | Same window · New tab | Same window (Back works) |
 
 - Choices preview live behind the window. **Save** (or ⌘S) keeps them. **Reset** puts the defaults back (Save to keep).
@@ -79,7 +80,7 @@ Measured on this Mac with 264 gists: first page in about 0.6 s after `pyup` (lis
 - Strict CSP: only the one page script may run (pinned by hash), it can only talk to localgist, images only from localgist, fonts only from Google Fonts, no framing, no forms.
 - The settings cookie is read as untrusted input: unknown values fall back to the defaults.
 
-## Editorial theme (branch `feat/watercolor-theme`)
+## Masthead and colour themes
 
 - **Colour themes** in the settings window, shown as mini page previews: **Finviz** (default; white in light mode, charcoal in dark mode), FT salmon, Economist red, Cover Ink, Newsprint, Sage Ledger, Night Edition.
 - A thin three-colour strip of the theme runs along the top. No images.

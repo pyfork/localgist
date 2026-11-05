@@ -224,6 +224,7 @@ def search(q, scopes):
 FONTS = {"arial": "Arial", "source": "Source Sans 3", "helvetica": "Helvetica", "plex": "IBM Plex Sans"}  # first one is the default
 OPENS = {"same": "Same window", "new": "New tab"}  # first one is the default; same window keeps Back working
 THEMES = {"system": "System", "light": "Light", "dark": "Dark"}  # first one is the default
+MASTS = {"on": "Masthead", "off": "Minimal"}  # first one is the default; Minimal hides the strip, nameplate and chart
 # Colour themes: paper, ink, accent (>= 4.5:1 on paper), link, rule, and the three-colour strip shown at the top.
 PALETTES = {
     "finviz": {"name": "Finviz", "note": "White, light or dark", "paper": "#ffffff", "ink": "#1e222d", "accent": "#2f6bd1", "link": "#1d4ea8", "rule": "#e7e9ee", "muted": "#6b7280", "wash": ("#2f6bd1", "#8fa3c2", "#e7ebf2")},
@@ -234,8 +235,8 @@ PALETTES = {
     "sage": {"name": "Sage Ledger", "note": "Quiet, archival", "paper": "#f3f4ee", "ink": "#22261f", "accent": "#4a6741", "link": "#35553a", "rule": "#dfe3d6", "muted": "#5f6658", "wash": ("#8fa682", "#c9a95e", "#e6e8dd")},
     "night": {"name": "Night Edition", "note": "Dark first", "paper": "#16181d", "ink": "#ece6d8", "accent": "#d3ad7a", "link": "#a9c1e6", "rule": "#2a2c31", "muted": "#a59e8f", "wash": ("#3e5578", "#8a7350", "#23262c")},
 }
-DEFAULT_PREFS = {"palette": "finviz", "font": "arial", "theme": "system", "open": "same", "in": "desc"}
-DISPLAY_KEYS = ("palette", "font", "theme", "open")  # what the settings window edits and Reset restores
+DEFAULT_PREFS = {"palette": "finviz", "font": "arial", "theme": "system", "mast": "on", "open": "same", "in": "desc"}
+DISPLAY_KEYS = ("palette", "font", "theme", "mast", "open")  # what the settings window edits and Reset restores
 
 
 def read_prefs(cookie_header):
@@ -252,6 +253,8 @@ def read_prefs(cookie_header):
             p["palette"] = pl
         if (th := q.get("theme", [""])[0]) in THEMES:
             p["theme"] = th
+        if (m := q.get("mast", [""])[0]) in MASTS:
+            p["mast"] = m
         if (o := q.get("open", [""])[0]) in OPENS:
             p["open"] = o
         if s := [x for x in dict.fromkeys(q.get("in", [""])[0].split(",")) if x in SCOPES]:
@@ -472,6 +475,7 @@ html[data-palette=finviz]{--band:#eceef2}:root[data-theme=dark][data-palette=fin
 .chart text{font:10px var(--serif);fill:var(--muted)}.chart .ann{font-style:italic;fill:var(--fg)}
 .chart line{stroke:var(--rule);stroke-width:1}
 header .brand{display:none}
+html[data-mast=off] .strip,html[data-mast=off] .band{display:none}html[data-mast=off] header .brand{display:inline}  /* Minimal layout */
 .empty.quiet{padding:28px 0 8px;text-align:center;font:italic 16px/1.4 var(--serif)}
 table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 tr:last-child td{border-bottom:0}
@@ -573,7 +577,7 @@ JS = r"""(()=>{const $=i=>document.getElementById(i),q=$("q");if(!q)return;
 let sel=null;  // month picked on the chart, "YYYY-MM"
 const root=document.documentElement,D=JSON.parse($("d").textContent),N=90,box=[$("r1"),$("r2")],cnt=$("cnt"),pg=$("pg"),st=$("st");
 const keep=box.map(e=>e.innerHTML);let keepCnt=cnt.textContent;
-const prefs={palette:root.dataset.palette,font:root.dataset.font,theme:root.dataset.theme,open:root.dataset.open,in:root.dataset.in};
+const prefs={palette:root.dataset.palette,font:root.dataset.font,theme:root.dataset.theme,mast:root.dataset.mast,open:root.dataset.open,in:root.dataset.in};
 // one cookie, read by the server on every page load, so settings survive restarts of localgist
 const store=()=>{document.cookie="lg="+encodeURIComponent(new URLSearchParams(prefs))+";path=/;max-age=31536000;samesite=strict"};
 const targets=o=>document.querySelectorAll("main a").forEach(a=>{if(o==="new")a.target="_blank";else a.removeAttribute("target")});
@@ -611,12 +615,12 @@ boxes.forEach(b=>b.addEventListener("change",()=>{if(!scope().length)boxes[0].ch
  if(b.value==="content"&&b.checked)fetch("/search?in=content",{cache:"no-store"}).catch(()=>{});run()}));
 // Settings modal: choices preview live; Save keeps them; leaving with unsaved changes asks first.
 const dlg=$("settings"),gear=$("gear"),ask=$("m-ask"),norm=$("m-normal"),msg=$("m-msg"),btn=$("m-save");
-const KEYS=["palette","font","theme","open"];
+const KEYS=["palette","font","theme","mast","open"];
 let saved=Object.fromEntries(KEYS.map(k=>[k,prefs[k]])),justSaved=false;
 const pick=n=>dlg.querySelector(`input[name=${n}]:checked`).value;
-const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),open:pick("open")});
+const form=()=>({palette:pick("palette"),font:pick("font"),theme:pick("theme"),mast:pick("mast"),open:pick("open")});
 const dirty=()=>{const f=form();return KEYS.some(k=>f[k]!==saved[k])};
-function apply(p){root.dataset.palette=p.palette;root.dataset.font=p.font;root.dataset.theme=p.theme;targets(p.open);
+function apply(p){root.dataset.palette=p.palette;root.dataset.mast=p.mast;root.dataset.font=p.font;root.dataset.theme=p.theme;targets(p.open);
  const u=$("d-fonts").dataset[p.font];if(u&&!$("f-"+p.font)){const l=document.createElement("link");l.id="f-"+p.font;l.rel="stylesheet";l.href=u;document.head.append(l)}}
 function status(){const d=dirty();btn.disabled=!d;msg.className="m-msg"+(d?" dirty":justSaved?" ok":"");
  if(justSaved&&!d){msg.innerHTML=$("ok-icon").innerHTML;msg.append(" Saved. Esc to close")}else msg.textContent=d?"Unsaved changes":"Choices preview live. Save to keep them."}
@@ -725,7 +729,7 @@ CSP = (
 def shell(name, body, prefs=DEFAULT_PREFS, script=False):
     font_link = f'<link id=f-{prefs["font"]} rel=stylesheet href="{FONT_CSS[prefs["font"]]}">' if prefs["font"] in FONT_CSS else ""
     return (
-        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
+        f'<!doctype html><html lang=en data-font="{prefs["font"]}" data-theme="{prefs["theme"]}" data-palette="{prefs["palette"]}" data-mast="{prefs["mast"]}" data-open="{prefs["open"]}" data-in="{prefs["in"]}"'
         '><head><meta charset=utf-8>'
         '<meta name=viewport content="width=device-width,initial-scale=1">'
         '<meta name=color-scheme content="light dark">'
@@ -812,6 +816,8 @@ def settings_dialog(prefs):
         f'<fieldset class="wide"><legend>Colour theme</legend>{palette_cards(prefs["palette"])}</fieldset>'
         f'<fieldset><legend>Light or dark</legend><div class="seg">{seg("theme", THEMES)}</div></fieldset>'
         f'<fieldset><legend>Font</legend><div class="seg">{seg("font", FONTS)}</div></fieldset>'
+        f'<fieldset><legend>Layout</legend><div class="seg">{seg("mast", MASTS)}</div>'
+        '<p class="hint">Minimal hides the masthead and chart.</p></fieldset>'
         f'<fieldset><legend>Clicks open</legend><div class="seg">{seg("open", OPENS)}</div>'
         '<p class="hint">Same window keeps the Back button working.</p></fieldset>'
         '</div>'
